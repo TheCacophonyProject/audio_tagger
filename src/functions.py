@@ -2116,51 +2116,75 @@ def retrieve_recordings(date_range, include_all_test_validation_recordings, incl
     rows = cur.fetchall()
     return rows
     
-# def retrieve_training_recordings(just_feb_2020, model_must_predict_what):   
-#     table_name = 'recordings'
-#     
-#     if (just_feb_2020):   
-#         firstDateOfTestValidationDataToExclude = parameters.feb_2020_training_data_start_date 
-#         lastDateOfTestValidationDataToExclude = parameters.feb_2020_training_data_end_date 
-#         
-#         sqlBuilding = "select recording_id, datetime(recordingDateTime,'localtime') as recordingDateTimeNZ, device_name, duration, device_super_name from " + table_name + " where (recordingDateTimeNZ < '" + firstDateOfTestValidationDataToExclude + "' OR recordingDateTimeNZ > '" + lastDateOfTestValidationDataToExclude + "')"
-#         sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE modelRunName = '" + parameters.model_run_name + "' AND predictedByModel = '" + model_must_predict_what + "')"
-#     
-#     else:
-#         sqlBuilding = "select recording_id, datetime(recordingDateTime,'localtime') as recordingDateTimeNZ, device_name, duration, device_super_name from " + table_name + ")"
-#         sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE modelRunName = '" + parameters.model_run_name + "' AND predictedByModel = '" + model_must_predict_what + "')"
-#     
-#     
-#     sqlBuilding += " ORDER BY recording_id ASC" 
-#     
-#     print("sqlBuilding ", sqlBuilding)
-#     
-#     cur = get_database_connection().cursor()
-#     cur.execute(sqlBuilding)
-#     rows = cur.fetchall()
-#     
-#     return rows     
-
-# def retrieve_recordings_for_creating_test_data(what_filter):
-#     table_name = 'recordings'
-#     
-#     firstDate = parameters.march_2020_test_data_start_date 
-#     lastDate = parameters.march_2020_test_data_end_date 
-#     
-#     cur = get_database_connection().cursor()
-#     # https://stackoverflow.com/questions/8187288/sql-select-between-dates
-# 
-#     if what_filter is None:
-#         cur.execute("select recording_id, datetime(recordingDateTime,'localtime') as recordingDateTimeNZ, device_name, duration, device_super_name from " + table_name + " where nightRecording = 'true' and recordingDateTimeNZ BETWEEN '" + firstDate + "' AND '" + lastDate + "' order by recording_id ASC")
-#     else:
-#         cur.execute("select recording_id, datetime(recordingDateTime,'localtime') as recordingDateTimeNZ, device_name, duration, device_super_name from " + table_name + " where nightRecording = 'true' and recordingDateTimeNZ BETWEEN '" + firstDate + "' AND '" + lastDate + "' and recording_id NOT IN (SELECT recording_id FROM test_data_recording_analysis WHERE recording_id = recording_id and what = '" + what_filter + "') order by recording_id ASC") 
-#                
-#     records = cur.fetchall()
-#                   
-#     return records
+def get_model_run_results_to_create_feb_2020_training_data(modelRunName, actualConfirmedFilter, predictedFilter, predicted_probability_filter, predicted_probability_filter_value_str, location_filter, actual_confirmed_other, predicted_other, recording_id_filter_value):   
+       
+    if location_filter =='Not Used':
+        location_filter ='not_used'        
+            
+    sqlBuilding = "SELECT ID FROM model_run_result WHERE modelRunName = '" + modelRunName + "'"
+    
+    sqlBuilding += " AND recordingDateTimeNZ BETWEEN '" + parameters.feb_2020_training_data_start_date + "' AND '" + parameters.feb_2020_training_data_end_date + "'"
+    
+    if actualConfirmedFilter !='not_used':
+        sqlBuilding += " AND "
+        if actualConfirmedFilter == "IS NULL":
+            if actual_confirmed_other == 'off':
+                sqlBuilding += "actual_confirmed IS NULL"
+            else: # Everything other is checked
+                sqlBuilding += "actual_confirmed IS NOT NULL"
+        else:
+            if actual_confirmed_other == 'off':
+                sqlBuilding +=  "actual_confirmed = '" + actualConfirmedFilter + "'"
+            else: # Everything other is checked
+                sqlBuilding +=  "actual_confirmed <> '" + actualConfirmedFilter + "'"
+                
+            
+    if predictedFilter !='not_used':
+        sqlBuilding += " AND "
+        if predictedFilter == "IS NULL":
+            if predicted_other == 'off':
+                sqlBuilding += "predictedByModel IS NULL"
+            else:
+                sqlBuilding += "predictedByModel IS NOT NULL"
+        else:
+            if predicted_other == 'off':
+                sqlBuilding +=  "predictedByModel = '" + predictedFilter + "'"
+            else:
+                sqlBuilding +=  "predictedByModel <> '" + predictedFilter + "'"
+            
+    if location_filter !='not_used':
+        sqlBuilding += " AND "
+        sqlBuilding +=  "device_super_name = '" + location_filter + "'"
+        
+    if (predicted_probability_filter_value_str == '') or (predicted_probability_filter == 'not_used'):
+        predicted_probability_filter = 'not_used'
+    else:    
+        if predicted_probability_filter == 'greater_than':  
+            probabilty_comparator = '>'
+#             predicted_probability_filter_value = float(predicted_probability_filter_value_str)    
+        elif predicted_probability_filter == 'less_than': 
+            probabilty_comparator = '<'
+#             predicted_probability_filter_value = float(predicted_probability_filter_value_str)    
+        sqlBuilding += " AND "
+#         sqlBuilding += " probability " + probabilty_comparator + " '" + predicted_probability_filter_value + "'"
+        sqlBuilding += " probability " + probabilty_comparator + " '" + predicted_probability_filter_value_str + "'"        
+            
+    if recording_id_filter_value:
+        sqlBuilding += " AND "        
+        sqlBuilding +=  "recording_id = '" + recording_id_filter_value + "'"
+        
+        
+    sqlBuilding += " ORDER BY recording_id DESC, startTime ASC"
+        
+    print("The sql is: ", sqlBuilding)
+    cur = get_database_connection().cursor()
+    cur.execute(sqlBuilding)
+#     cur.execute("SELECT ID FROM model_run_result WHERE modelRunName = '2019_12_11_1' ORDER BY recording_id DESC, startTime ASC")
+    rows = cur.fetchall()
+    return rows
     
     
-def mark_recording_as_analysed(recording_id, what):
+def mark_recording_as_analysed(recording_id, what, cacophony_user_name):
     try: 
         
         if has_this_recording_been_analysed_for_this(recording_id, what):
@@ -2168,9 +2192,9 @@ def mark_recording_as_analysed(recording_id, what):
             return True 
                 
         cur = get_database_connection().cursor()
-        sql = ''' INSERT INTO test_data_recording_analysis(recording_id, what)
-                      VALUES(?,?) '''
-        cur.execute(sql, (recording_id, what))
+        sql = ''' INSERT INTO test_data_recording_analysis(recording_id, what, username)
+                      VALUES(?,?,?) '''
+        cur.execute(sql, (recording_id, what, cacophony_user_name))
         get_database_connection().commit()   
         return True
     except Exception as e:
@@ -3063,333 +3087,5 @@ def test_data_analysis_using_version_7_onsets_with_spectrogram_based_prediction(
         cur.execute(sql, (modelRunName, recording_id, model_run_result_startTime, model_run_result_duration, model_run_result_predictedByModel, model_run_result_probability )) 
         get_database_connection().commit()
 
-# def get_march_2020_recording_ids():
-#     firstDate = parameters.recordings_for_creating_test_data_start_date 
-#     lastDate = parameters.recordings_for_creating_test_data_end_date 
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT recording_id FROM recordings WHERE recordingDateTimeNZ BETWEEN '" + firstDate + "' AND '" + lastDate + "' ORDER BY recording_id") 
-#     march_recordings_2020 = cur.fetchall() 
-#     return march_recordings_2020
 
-# def get_feb_2020_recording_ids():
-#     firstDate = parameters.recordings_for_creating_feb_training_data_start_date 
-#     lastDate = parameters.recordings_for_creating_feb_training_data_end_date 
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT recording_id FROM recordings WHERE recordingDateTimeNZ BETWEEN '" + firstDate + "' AND '" + lastDate + "' ORDER BY recording_id") 
-#     feb_recordings_2020 = cur.fetchall() 
-#     return feb_recordings_2020
-    
-
-# def get_march_2020_version_7_onsets():
-#     firstDate = parameters.recordings_for_creating_test_data_start_date 
-#     lastDate = parameters.recordings_for_creating_test_data_end_date 
-#     
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT recording_id, start_time_seconds, duration_seconds, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ FROM onsets WHERE version = 7 AND recordingDateTimeNZ BETWEEN '" + firstDate + "' AND '" + lastDate + "' ORDER BY recording_id") 
-#     march_onsets = cur.fetchall() 
-#    
-#     
-#     return march_onsets
-
-# def get_model_run_results_simple(model_run_name):        
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT recording_id, startTime, duration, predictedByModel, probability, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ FROM model_run_result WHERE modelRunName = '" + model_run_name + "'") 
-#     model_run_results = cur.fetchall()    
-#     
-#     return model_run_results
-     
-# def get_march_2020_test_data_for_like_morepork():
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT recording_id, start_time_seconds, finish_time_seconds, what, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ from test_data WHERE what LIKE '%morepork%'")
-#     march_2020_test_data = cur.fetchall()
-#     return march_2020_test_data
-
-# def get_march_2020_test_data_for_morepork_morepork():
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT recording_id, start_time_seconds, finish_time_seconds, what, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ from test_data WHERE what = 'morepork_more-pork'")
-#     march_2020_test_data = cur.fetchall()
-#     return march_2020_test_data
-    
-# def does_test_data_overlap_a_morepork_prediction(modelRunName, recording_id, test_data_start_time_seconds, test_data_finish_time_seconds):
-#     
-#     cur = get_database_connection().cursor()
-# #     cur.execute("SELECT ID, modelRunName, recording_id, predicted_startTime, predicted_duration, predictedByModel, probability, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, determination from sensitivity_specificity WHERE modelRunName = ? AND recording_id = ? AND predictedByModel IS NOT NULL", (modelRunName, recording_id)) # predictedByModel IS NOT NULL to just check against predictions
-#     cur.execute("SELECT ID, modelRunName, recording_id, predicted_startTime, predicted_duration, predictedByModel from sensitivity_specificity WHERE modelRunName = ? AND recording_id = ? AND predictedByModel IS NOT NULL", (modelRunName, recording_id)) # predictedByModel IS NOT NULL to just check against predictions
-#    
-#     sensitivity_specificity_results = cur.fetchall()
-#     overlap = False
-#     for sensitivity_specificity_result in sensitivity_specificity_results:
-#         ID = sensitivity_specificity_result[0]
-#         modelRunName = sensitivity_specificity_result[1]
-#         recording_id = sensitivity_specificity_result[2]
-#         predicted_startTime = sensitivity_specificity_result[3]
-#         predicted_duration = sensitivity_specificity_result[4]
-#         predictedByModel = sensitivity_specificity_result[5]
-#         
-#         predicted_endTime = predicted_startTime + predicted_duration
-#         
-#         if predicted_startTime > test_data_start_time_seconds and predicted_startTime < test_data_finish_time_seconds:
-#             overlap = True
-#             break
-#         elif predicted_endTime > test_data_start_time_seconds and predicted_endTime < test_data_finish_time_seconds:
-#             overlap = True
-#             break
-#     
-#     if overlap:   
-#         return overlap, ID, predictedByModel 
-#     else:
-#         return overlap, None, None        
-        
-# def find_matching_onset(recording_id, start_time_seconds):
-#     search_start_seconds = start_time_seconds - 0.2
-#     search_end_seconds = start_time_seconds + 0.2
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT COUNT(*) from onsets WHERE recording_id = ? AND version = 7 AND start_time_seconds BETWEEN ? AND ? ", (recording_id, search_start_seconds, search_end_seconds))
-#        
-#    
-#     count = cur.fetchall()
-#     
-#     return count[0][0]
-#     
-#     
-#     
-#     march_2020_test_data = cur.fetchall()
-#     return march_2020_test_data
-
-# def insert_model_run_result(model_run_name, recording_id, startTime, duration, predictedByModel, probability):
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT device_name, device_super_name, recordingDateTime, recordingDateTimeNZ FROM recordings WHERE recording_id = ? ", (recording_id,))
-#     result = cur.fetchall()
-#     
-#     device_name = result[0][0]
-#     device_super_name = result[0][1]
-#     recordingDateTime = result[0][2]
-#     recordingDateTimeNZ = result[0][3]
-#     
-#     try:
-#         sql = ''' INSERT INTO model_run_result(modelRunName, recording_id,startTime, duration, predictedByModel, probability, device_name,device_super_name, recordingDateTime, recordingDateTimeNZ)
-#                   VALUES(?,?,?,?,?,?,?,?,?,?) '''
-#         cur = get_database_connection().cursor()
-#         cur.execute(sql, (model_run_name, recording_id, startTime, duration, predictedByModel, probability, device_name, device_super_name, recordingDateTime, recordingDateTimeNZ))
-#        
-#         get_database_connection().commit()
-#     except Exception as e:
-#         print(e, '\n')
-        
-
-        
-    
-# def copy_onset_data_to_training_data_table():
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT version, recording_id, start_time_seconds, duration_seconds, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, actual_confirmed from onsets WHERE version = 5 AND actual_confirmed IS NOT NULL")
-#     onsets = cur.fetchall()    
-#     
-#     number_of_onsets = len(onsets)
-#     count = 0
-#     for onset in onsets:
-#         count+=1
-#         print(count)
-#         version = onset[0]
-#         recording_id = onset[1]
-#         start_time_seconds = onset[2]
-#         duration_seconds = onset[3]
-#         device_super_name = onset[4]
-#         device_name = onset[5]
-#         recordingDateTime = onset[6]
-#         recordingDataTimeNZ = onset[7]
-#         actual_confirmed = onset[8]
-#         
-#         try:
-#             sql = ''' INSERT INTO training_data(version, recording_id, start_time_seconds, duration_seconds, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, actual_confirmed)
-#                   VALUES(?,?,?,?,?,?,?,?,?) '''
-#             cur = get_database_connection().cursor()
-#             cur.execute(sql, (version, recording_id, start_time_seconds, duration_seconds, device_super_name, device_name, recordingDateTime, recordingDataTimeNZ, actual_confirmed))
-#        
-#             get_database_connection().commit()
-#         except Exception as e:
-#             print(e, '\n')
-    
-# def update_training_data_table_with_latest_model_predictions_from_csv():
-#    
-# #     myFile = pd.read_csv('/home/tim/Work/Cacophony/Audio_Analysis/training_data_10717_recordings.csv', sep=',')
-#     myFile = pd.read_csv('/home/tim/Work/Cacophony/Audio_Analysis/training_data_feb_2020_v2_cleaned_of_v1.csv', sep=',')
-#     number_or_rows = len(myFile.index)
-#     count = 0
-#     for index, row in myFile.iterrows():
-#         count+=1
-#         print("Processing ", count, " of ", number_or_rows)
-#         version = row['version']
-#         recording_id = row['recording_id']
-#         start_time_seconds = row['start_time_seconds']
-#         duration_seconds = row['duration_seconds']
-#         device_super_name = row['device_super_name']
-#         device_name = row['device_name']
-#         recordingDateTime = row['recordingDateTime']
-#         recordingDateTimeNZ = row['recordingDateTimeNZ']
-#         predicted_by_model = row['predicted_by_model']
-#         actual_confirmed = row['actual_confirmed']        
-#         probability = row['probability']
-#         
-#         try:
-#             sql = ''' INSERT INTO training_data(version, recording_id, start_time_seconds, duration_seconds, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, actual_confirmed, probability, predicted_by_model)
-#                   VALUES(?,?,?,?,?,?,?,?,?,?,?) '''
-#             cur = get_database_connection().cursor()
-#             cur.execute(sql, (version, recording_id, start_time_seconds, duration_seconds, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, actual_confirmed, probability, predicted_by_model))                            
-#             get_database_connection().commit()
-#         except Exception as e:
-#             print(e, '\n')
-        
-        
-# def copy_training_data_to_model_run_result_table():
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT version, recording_id, start_time_seconds, duration_seconds, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, predicted_by_model, actual_confirmed, probability from training_data where version != 5")
-#     training_data = cur.fetchall()  
-#     row_count = len(training_data)
-#     count = 0
-#     for row in training_data:
-#         count+=1
-#         print(count, " of ", row_count)
-#         try:
-#             version = row[0]
-#             recording_id = row[1]
-#             start_time_seconds = row[2]
-#             duration_seconds = row[3]
-#             device_super_name = row[4]
-#             device_name = row[5]
-#             recordingDateTime = row[6]
-#             recordingDateTimeNZ = row[7]
-#             predicted_by_model = row[8]
-#             actual_confirmed = row[9]        
-#             probability = row[10]
-#             
-#             sql = ''' INSERT INTO model_run_result(modelRunName, recording_id, startTime, duration, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, actual_confirmed, probability, predictedByModel)
-#                   VALUES(?,?,?,?,?,?,?,?,?,?,?) '''
-#             cur = get_database_connection().cursor()
-#             cur.execute(sql, (version, recording_id, start_time_seconds, duration_seconds, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, actual_confirmed, probability, predicted_by_model))                            
-#             get_database_connection().commit()
-#         except Exception as e:
-#             print(e, '\n')
-          
-    
-    
-# def get_original_recording_sample_rate(recording_id):   
-#     recordings_folder_with_path = parameters.base_folder + '/' + parameters.downloaded_recordings_folder
-#     filename = str(recording_id) + ".m4a"
-#     audio_in_path = recordings_folder_with_path + "/" + filename
-# 
-# 
-#     y, sr = librosa.load(audio_in_path, sr=None, mono=True, duration=1) 
-#     
-#     return sr
-# 
-# def update_database_recordings_with_original_sample_rate():
-#     cur = get_database_connection().cursor()
-#     cur.execute("SELECT recording_id from recordings WHERE sample_rate IS NULL")
-#     recordings = cur.fetchall()  
-#     row_count = len(recordings)
-#     count = 0
-#     for row in recordings:
-#         count+=1
-#         print(count, " of ", row_count)
-#         
-#         recording_id = row[0]
-#         try:
-#             sample_rate = get_original_recording_sample_rate(recording_id)
-#         except:
-#             print("Problem with recording " + str(recording_id))
-#             continue
-#         print("sample_rate is ", sample_rate)
-#         
-#         try:
-#          
-#             sql = ''' UPDATE recordings 
-#                       SET sample_rate = ?                      
-#                       WHERE recording_id = ? '''
-# 
-#             cur.execute(sql, (sample_rate, recording_id))
-#             get_database_connection().commit()
-#             
-#             sql2 = ''' UPDATE training_data 
-#                       SET sample_rate = ?                      
-#                       WHERE recording_id = ? '''
-# 
-#             cur.execute(sql2, (sample_rate, recording_id))
-#             get_database_connection().commit()
-#             
-#             sql2 = ''' UPDATE model_run_result 
-#                       SET sample_rate = ?                      
-#                       WHERE recording_id = ? '''
-# #             cur = get_database_connection().cursor()
-#             cur.execute(sql2, (sample_rate, recording_id))
-#             get_database_connection().commit()
-#             
-#             sql3 = ''' UPDATE test_data 
-#                       SET sample_rate = ?                      
-#                       WHERE recording_id = ? '''
-# #             cur = get_database_connection().cursor()
-#             cur.execute(sql3, (sample_rate, recording_id))
-#             get_database_connection().commit()
-#             
-#             
-#         except Exception as e:
-#             print(e, '\n')
-#             print('\t\tUnable to update recording ' + str(recording_id), '\n')
-#             
-        
-            
-# def compare_spectrograms_of_different_recording_sample_rates():
-#     
-#     recordings = [563200]
-#     start_time = 11.6 
-#     
-#     for recording_id in recordings:
-#     
-#         slices_per_second = 10
-#         num_mels = 64
-#         frequency_min = 700
-#         frequency_max = 1100
-#         
-# #         recording_id = 305417
-#         recording_fp = "/home/tim/Work/Cacophony/downloaded_recordings/all_recordings/" + str(recording_id) + ".m4a"
-#         
-#         frames, rate = librosa.load(recording_fp, sr=None, offset=start_time, duration=0.8)
-#         
-#         # generate spectrogram
-#         nfft = int(rate / slices_per_second)
-#         print("nfft ", nfft)
-#         specgram = librosa.feature.melspectrogram(
-#             y=frames,
-#             sr=rate,
-#             n_fft=nfft,
-#             hop_length=int(nfft / 2),
-#             n_mels=num_mels,
-#             fmin=frequency_min,
-#             fmax=frequency_max)
-#         
-#         
-#         
-#          
-#         print(specgram.shape)
-#         print("rate ", rate)
-#     
-#         plt.matshow(specgram)
-#         
-#   
-#                     
-#         plt.savefig("/home/tim/Temp/" + str(recording_id) + "_" + str(rate) + "_" + str(slices_per_second) + "_" + str(nfft) + ".jpg")
-#         
-#         nfft2=8192
-#         frames, rate = librosa.load(recording_fp, sr=48000, offset=start_time, duration=0.8)
-#         mfccs = librosa.feature.melspectrogram(y=frames, sr=48000, n_mels=64, fmin=700,fmax=1100, hop_length=512, n_fft=nfft2)
-#         
-#         print(mfccs.shape)
-#         print("rate ", rate)
-#     
-#         plt.matshow(mfccs)
-#         
-#     #     plt.show()
-#                     
-#         plt.savefig("/home/tim/Temp/" + str(recording_id) + "_" + str(rate)  +  "_" + str(nfft2) + ".jpg")
-#     
-#     
     
