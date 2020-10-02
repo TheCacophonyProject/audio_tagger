@@ -88,10 +88,10 @@ class HomePage(tk.Frame):
         label = tk.Label(self, text="Home Page", font=LARGE_FONT)
         label.pack(pady=10,padx=10)
         
-        instuctions_text = "Work through the steps for normal model iteration."
-        instuctions_msg = tk.Message(self, text = instuctions_text)
-        instuctions_msg.config(width=600)
-        instuctions_msg.pack(pady=10,padx=10)
+#         instuctions_text = "Work through the steps for normal model iteration."
+#         instuctions_msg = tk.Message(self, text = instuctions_text)
+#         instuctions_msg.config(width=600)
+#         instuctions_msg.pack(pady=10,padx=10)
         
         instuctions_text2 = "SQLite is used as the database, without any wrapper (such as GRDB) to allow for concurrent db write access.  This means if you run two versions of this application at once, you will get errors."
         instuctions_msg2 = tk.Message(self, text = instuctions_text2)
@@ -103,7 +103,7 @@ class HomePage(tk.Frame):
         instuctions_msg3.config(width=600)
         instuctions_msg3.pack(pady=10,padx=10)
         
-        recordings_button = ttk.Button(self, text="Recordings (Do not always use)",
+        recordings_button = ttk.Button(self, text="Download Recordings from Server (Do not always use)",
                             command=lambda: controller.show_frame(RecordingsPage))        
         recordings_button.pack()        
                     
@@ -327,39 +327,51 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         ref_line_id = self.canvas.create_line(0,ref_line_canvas_value,self.spectrogram_image.width(),ref_line_canvas_value, fill='blue')
     
     
-    def retrieve_recordings_for_creating_test_data(self,what_filter):
-        if what_filter is None:
-            self.config(bg="red")
-        else:
-            self.config(bg="light grey")
+#     def retrieve_recordings_for_creating_test_data(self,what_filter):
+#         if what_filter is None:
+#             self.config(bg="red")
+#         else:
+#             self.config(bg="light grey")
+#         
+#         self.recordings = functions.retrieve_recordings_for_creating_test_data(what_filter)  
+# 
+# 
+#     def reload_recordings_for_creating_test_data(self,what_filter):
+#         self.retrieve_recordings_for_creating_test_data(what_filter)
+#         self.current_recordings_index = 0
+#         self.change_spectrogram()
         
-        self.recordings = functions.retrieve_recordings_for_creating_test_data(what_filter)  
-
-
-    def reload_recordings_for_creating_test_data(self,what_filter):
-        self.retrieve_recordings_for_creating_test_data(what_filter)
-        self.current_recordings_index = 0
-        self.change_spectrogram()
-        
-    def load_test_verification_results(self):
-        self.config(bg="yellow")
-        self.recordings = functions.retrieve_recordings_for_evaluating_test_validation_data(self.retrieve_all_test_validation_recordings.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
-        self.current_recordings_index = 0
-        self.change_spectrogram()  
-        
-    def load_recordings_except_test_validation_data(self):
+    def load_all_training_recordings(self):
         self.config(bg="blue")
-        self.recordings = functions.retrieve_recordings_except_test_validation_data(self.model_must_predict_what_combobox.get())
+        self.recordings = functions.retrieve_recordings(None, self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
         self.current_recordings_index = 0
-        self.change_spectrogram()    
+#         self.change_spectrogram() 
+        self.display_spectrogram()
+             
+    def load_feb_2020_training_recordings(self):
+        self.config(bg="green")
+        self.recordings = functions.retrieve_recordings("feb_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
+        self.current_recordings_index = 0
+#         self.change_spectrogram()   
+        self.display_spectrogram()
+        
+    def load_march_2020_test_recordings(self):
+        self.config(bg="yellow")
+        self.recordings = functions.retrieve_recordings("march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
+        self.current_recordings_index = 0
+#         self.change_spectrogram()    
+        self.display_spectrogram()
+        
+        
         
     def display_spectrogram(self):
         try:
+            self.stop_clip()
             recording_id = self.recordings[self.current_recordings_index][0]
             recording_date_time = self.recordings[self.current_recordings_index][1]
             recording_device_super_name = self.recordings[self.current_recordings_index][4]
     
-            self.spectrogram_image = functions.get_single_create_focused_mel_spectrogram_for_creating_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))
+            self.spectrogram_image = functions.get_mel_spectrogram_for_creating_training_and_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))
             
             self.image = self.canvas.create_image(0, 0, image=self.spectrogram_image, anchor=NW)   
             self.canvas.configure(height=self.spectrogram_image.height())             
@@ -383,17 +395,63 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             if self.show_model_predictions.get():
                 self.display_model_predictions()
                 
-            if self.show_onsets.get():
-                    self.display_onsets()
+#             if self.show_onsets.get():
+#                     self.display_onsets()
             
             self.draw_horizontal_frequency_reference_line()   
             
+            recording_date_time = self.recordings[self.current_recordings_index][1]
+            recording_device_super_name = self.recordings[self.current_recordings_index][4]
+            
             self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id) + " at location " + recording_device_super_name) 
             self.recording_date_and_time_value.set("Date and Time: " + recording_date_time)
-            self.recording_index_out_of_total_of_recordings_value.set("Result " + str(self.current_recordings_index) + " of "   + str(len(self.recordings)) + " recordings")    
+                               
+            
+            self.recording_index_out_of_total_of_recordings_value.set("Result " + str(self.current_recordings_index) + " of "   + str(len(self.recordings)) + " recordings")
+                        
+            if self.auto_play.get():
+                self.play_clip(0)                
+                    
         except Exception as e:
             print(e)                        
             
+    def change_spectrogram(self):
+        self.stop_clip()
+        if len(self.recordings) < 1:
+            messagebox.showinfo("No Recordings", "Sorry, there are no recordings with the selected criteria")
+            self.recording_id_and_result_place_value2.set("Recording Id: ")
+            self.recording_index_out_of_total_of_recordings_value.set("Result ")            
+            self.canvas.delete("all")
+            
+        else:
+        
+            recording_id = self.recordings[self.current_recordings_index][0]
+            recording_date_time = self.recordings[self.current_recordings_index][1]
+            recording_device_super_name = self.recordings[self.current_recordings_index][4]
+    #         self.spectrogram_image = functions.get_mel_spectrogram_for_creating_training_and_test_data(str(recording_id)) 
+            self.spectrogram_image = functions.get_mel_spectrogram_for_creating_training_and_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))  
+            self.canvas.configure(height=self.spectrogram_image.height())  
+            self.image = self.canvas.create_image(0, 0, image=self.spectrogram_image, anchor=NW)  
+                                 
+    
+            self.retrieve_test_data_from_database_and_add_rectangles_to_image()  
+            
+            if self.show_model_predictions.get():
+                self.display_model_predictions()
+                
+#             if self.show_onsets.get():
+#                 self.display_onsets()
+            
+            self.draw_horizontal_frequency_reference_line()   
+                    
+    #         self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id))
+            self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id) + " at location " + recording_device_super_name) 
+            self.recording_date_and_time_value.set("Date and Time: " + recording_date_time) 
+            self.recording_index_out_of_total_of_recordings_value.set("Result " + str(self.current_recordings_index) + " of "   + str(len(self.recordings)) + " recordings")
+            
+            if self.auto_play.get():
+                self.play_clip(0)     
+    
     def previous_recording(self):
         if self.current_recordings_index > 0:
             self.current_recordings_index = self.current_recordings_index -1
@@ -418,42 +476,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             messagebox.showinfo("Oops", "Could not update database - is it locked?")
                     
         
-    def change_spectrogram(self):
-        self.stop_clip()
-        if len(self.recordings) < 1:
-            messagebox.showinfo("No Recordings", "Sorry, there are no recordings with the selected criteria")
-            self.recording_id_and_result_place_value2.set("Recording Id: ")
-            self.recording_index_out_of_total_of_recordings_value.set("Result ")            
-            self.canvas.delete("all")
-            
-        else:
-        
-            recording_id = self.recordings[self.current_recordings_index][0]
-            recording_date_time = self.recordings[self.current_recordings_index][1]
-            recording_device_super_name = self.recordings[self.current_recordings_index][4]
-    #         self.spectrogram_image = functions.get_single_create_focused_mel_spectrogram_for_creating_test_data(str(recording_id)) 
-            self.spectrogram_image = functions.get_single_create_focused_mel_spectrogram_for_creating_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))  
-            self.canvas.configure(height=self.spectrogram_image.height())  
-            self.image = self.canvas.create_image(0, 0, image=self.spectrogram_image, anchor=NW)  
-                                 
-    
-            self.retrieve_test_data_from_database_and_add_rectangles_to_image()  
-            
-            if self.show_model_predictions.get():
-                self.display_model_predictions()
-                
-            if self.show_onsets.get():
-                self.display_onsets()
-            
-            self.draw_horizontal_frequency_reference_line()   
-                    
-    #         self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id))
-            self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id) + " at location " + recording_device_super_name) 
-            self.recording_date_and_time_value.set("Date and Time: " + recording_date_time) 
-            self.recording_index_out_of_total_of_recordings_value.set("Result " + str(self.current_recordings_index) + " of "   + str(len(self.recordings)) + " recordings")
-            
-            if self.auto_play.get():
-                self.play_clip(0)           
+          
                 
     def confirm_actual(self):  
        
@@ -564,26 +587,26 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
              
                            
             
-    def display_onsets(self):
-        recording_id = self.recordings[self.current_recordings_index][0]
-        duration_of_recording = self.recordings[self.current_recordings_index][3]
-        
-        onsets = functions.get_onsets_stored_locally_for_recording_id('', recording_id)
-        for onset in onsets:            
-            this_onset_version = onset[0]
-            start_time_seconds = onset[2]
-            
-            x_pos_on_spectrogram = functions.convert_time_in_seconds_to_x_value_for_canvas_create_method(start_time_seconds, duration_of_recording, self.spectrogram_image.width())
-            
-            fill = "red"
-            dash=(4, 4)
-            
-            if this_onset_version == parameters.onset_version:
-                fill = "blue"
-                dash=(10, 7)
-                            
-#             aLine = self.canvas.create_line(x_pos_on_spectrogram, 0, x_pos_on_spectrogram, self.spectrogram_image.height(), fill=fill, dash=(4, 4))
-            aLine = self.canvas.create_line(x_pos_on_spectrogram, 0, x_pos_on_spectrogram, self.spectrogram_image.height(), fill=fill, dash=dash)
+#     def display_onsets(self):
+#         recording_id = self.recordings[self.current_recordings_index][0]
+#         duration_of_recording = self.recordings[self.current_recordings_index][3]
+#         
+#         onsets = functions.get_onsets_stored_locally_for_recording_id('', recording_id)
+#         for onset in onsets:            
+#             this_onset_version = onset[0]
+#             start_time_seconds = onset[2]
+#             
+#             x_pos_on_spectrogram = functions.convert_time_in_seconds_to_x_value_for_canvas_create_method(start_time_seconds, duration_of_recording, self.spectrogram_image.width())
+#             
+#             fill = "red"
+#             dash=(4, 4)
+#             
+#             if this_onset_version == parameters.onset_version:
+#                 fill = "blue"
+#                 dash=(10, 7)
+#                             
+# #             aLine = self.canvas.create_line(x_pos_on_spectrogram, 0, x_pos_on_spectrogram, self.spectrogram_image.height(), fill=fill, dash=(4, 4))
+#             aLine = self.canvas.create_line(x_pos_on_spectrogram, 0, x_pos_on_spectrogram, self.spectrogram_image.height(), fill=fill, dash=dash)
 
     
     def retrieve_all_test_recordings_checkbox_pressed(self): 
@@ -591,7 +614,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             self.retrieve_recordings_with_manual_analysis.set(False)        
      
     def retrieve_model_or_manual_analysis_recordings_checkbox_pressed(self): 
-        self.retrieve_all_test_validation_recordings.set(False)                
+        self.retrieve_recording_even_if_not_tagged_by_model_human.set(False)                
            
     
     def __init__(self, parent, controller):
@@ -606,37 +629,40 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         self.temp_rectangle = None
         self.current_recordings_index = 0
         
-        title_label = ttk.Label(self, text="Create Training and Test Data", font=LARGE_FONT)
+        title_label = ttk.Label(self, text="Create Training OR Test Data", font=LARGE_FONT)
         title_label.grid(column=0, columnspan=1, row=0) 
         
-        msg1_instructions = "Use the radio buttons to filter the recordings to use and then - Press either - Load Training Recordings or Load Test Recordings"
-        msg1 = tk.Message(self, text = msg1_instructions)
-        msg1.config(width=1000)
-        msg1.grid(column=0, columnspan=6, row=1)     
+#         msg1_instructions = "1) Decide what frequency range you want to focus on."
+#         msg1 = tk.Message(self, text = msg1_instructions, font=LARGE_FONT)
+#         msg1.config(width=1000)
+#         msg1.grid(column=0, columnspan=2, row=1)   
+        
+        instruction_1 = ttk.Label(self, text="1) Decide what frequency range you want to focus on.", font=LARGE_FONT)
+        instruction_1.grid(column=0, columnspan=2, row=1)  
         
         min_freq_label = ttk.Label(self, text="Enter the minimum frequency (Hz)")
-        min_freq_label.grid(column=1, columnspan=1, row=50)
+        min_freq_label.grid(column=0, columnspan=1, row=50)
              
 #         self.min_freq = StringVar(value='200')
         self.min_freq = StringVar(value=str(parameters.morepork_min_freq))
         min_freq_entry = tk.Entry(self,  textvariable=self.min_freq, width=30)
-        min_freq_entry.grid(column=1, columnspan=1, row=51)        
+        min_freq_entry.grid(column=0, columnspan=1, row=51)        
         
         max_freq_label = ttk.Label(self, text="Enter the maximum frequency (Hz)")
-        max_freq_label.grid(column=2, columnspan=1, row=50)
+        max_freq_label.grid(column=1, columnspan=1, row=50)
              
 #         self.max_freq = StringVar(value='2000')
         self.max_freq = StringVar(value=str(parameters.morepork_max_freq))
         max_freq_entry = tk.Entry(self,  textvariable=self.max_freq, width=30)
-        max_freq_entry.grid(column=2, columnspan=1, row=51)
+        max_freq_entry.grid(column=1, columnspan=1, row=51)
         
         horizonal_ref_line_freq_label = ttk.Label(self, text="Enter the frequency (Hz) of the horizontal reference line")
-        horizonal_ref_line_freq_label.grid(column=3, columnspan=1, row=50)
+        horizonal_ref_line_freq_label.grid(column=2, columnspan=1, row=50)
         
         
         self.horizonal_ref_line_freq = StringVar(value=str(parameters.morepork_expected_freq))      
         horizonal_ref_line_freq_entry = tk.Entry(self,  textvariable=self.horizonal_ref_line_freq, width=30)
-        horizonal_ref_line_freq_entry.grid(column=3, columnspan=1, row=51)  
+        horizonal_ref_line_freq_entry.grid(column=2, columnspan=1, row=51)  
         
         self.canvas = tk.Canvas(self, width=10, height=10)
 
@@ -644,28 +670,31 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         self.canvas.config(width=parameters.test_data_canvas_width)
         
         
-        self.retrieve_recordings_for_creating_test_data(None)
+#         self.retrieve_recordings_for_creating_test_data(None)
         
         
         
-        msg2_instructions = "Use the radio buttons to filter the recordings to use and then - Press either - Load Training Recordings or Load Test Recordings"
-        msg2 = tk.Message(self, text = msg2_instructions)
-        msg2.config(width=1000)
-        msg2.grid(column=0, columnspan=6, row=60)    
+#         msg2_instructions = "2) Use controls below to filter the recordings to use and then - Press either - Load Training Recordings or Load Test Recordings"
+#         msg2 = tk.Message(self, text = msg2_instructions, font=LARGE_FONT)
+#         msg2.config(width=1000)
+#         msg2.grid(column=0, columnspan=2, row=60)   
+        
+        instruction_2 = ttk.Label(self, text="2) Use controls below to filter the recordings to use and then - Press one of the 3 'Load .... recordings' buttons", font=LARGE_FONT)
+        instruction_2.grid(column=0, columnspan=3, row=60)   
         
         self.model_must_predict_what_combobox = ttk.Combobox(self,  values=parameters.class_names.split(","), width=30)                   
         self.model_must_predict_what_combobox.grid(column=2, columnspan=1, row=61)  
         self.model_must_predict_what_combobox.current(0)
         
-        self.retrieve_all_test_validation_recordings = BooleanVar()
-        retrieve_all_test_validation_recordings_Checkbuttton = Checkbutton(self, text="Retrieve all test validation recordings (even if not tagged by model/human)", variable=self.retrieve_all_test_validation_recordings, command=lambda: self.retrieve_all_test_recordings_checkbox_pressed())
+        self.retrieve_recording_even_if_not_tagged_by_model_human = BooleanVar()
+        retrieve_all_test_validation_recordings_Checkbuttton = Checkbutton(self, text="Retrieve all recordings (even if not tagged by model/human)", variable=self.retrieve_recording_even_if_not_tagged_by_model_human, command=lambda: self.retrieve_all_test_recordings_checkbox_pressed())
         retrieve_all_test_validation_recordings_Checkbuttton.grid(column=0, columnspan=2, row=65)
-        self.retrieve_all_test_validation_recordings.set(False)
+        self.retrieve_recording_even_if_not_tagged_by_model_human.set(True)
         
         self.retrieve_recordings_with_model_predictions = BooleanVar()
         retrieve_recordings_with_model_predictions_Checkbuttton = Checkbutton(self, text="Recordings must have a model prediction of these values", variable=self.retrieve_recordings_with_model_predictions, command=lambda: self.retrieve_model_or_manual_analysis_recordings_checkbox_pressed())
         retrieve_recordings_with_model_predictions_Checkbuttton.grid(column=2, columnspan=2, row=65)
-        self.retrieve_recordings_with_model_predictions.set(True)
+        self.retrieve_recordings_with_model_predictions.set(False)
         
         self.show_model_predictions = BooleanVar()
         show_model_predictions_Checkbuttton = Checkbutton(self, text="Show (these) model predictions", variable=self.show_model_predictions)
@@ -682,19 +711,22 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         self.retrieve_recordings_with_manual_analysis = BooleanVar()
         retrieve_recordings_with_manual_analysis_Checkbuttton = Checkbutton(self, text="Recording must have manual analysis", variable=self.retrieve_recordings_with_manual_analysis, command=lambda: self.retrieve_model_or_manual_analysis_recordings_checkbox_pressed())
         retrieve_recordings_with_manual_analysis_Checkbuttton.grid(column=4, columnspan=1, row=65)
-        self.retrieve_recordings_with_manual_analysis.set(True) 
+        self.retrieve_recordings_with_manual_analysis.set(False) 
         
-        self.show_onsets = BooleanVar()
-        show_onsets_Checkbuttton = Checkbutton(self, text="Show Onsets", variable=self.show_onsets)
-        show_onsets_Checkbuttton.grid(column=3, columnspan=1, row=66)
-        self.show_onsets.set(True)   
+#         self.show_onsets = BooleanVar()
+#         show_onsets_Checkbuttton = Checkbutton(self, text="Show Onsets", variable=self.show_onsets)
+#         show_onsets_Checkbuttton.grid(column=3, columnspan=1, row=66)
+#         self.show_onsets.set(True)   
         
 
-        load_recordings_except_test_validation_data_button = ttk.Button(self, text="Load Training Recordings (Feb 2020)", command=lambda: self.load_recordings_except_test_validation_data()) # https://effbot.org/tkinterbook/canvas.htm))
-        load_recordings_except_test_validation_data_button.grid(column=0, columnspan=1, row=70) 
+        load_all_recordings_except_march_2020_button = ttk.Button(self, text="Load all training/validation recordings (All recordings except March 2020 Test recordings) - Blue background", command=lambda: self.load_all_training_recordings()) # https://effbot.org/tkinterbook/canvas.htm))
+        load_all_recordings_except_march_2020_button.grid(column=0, columnspan=2, row=70) 
         
-        load_results_button = ttk.Button(self, text="Load Test Recordings (March 2020)", command=lambda: self.load_test_verification_results()) # https://effbot.org/tkinterbook/canvas.htm))
-        load_results_button.grid(column=0, columnspan=1, row=75) 
+        load_feb_2020_training_recordings_button = ttk.Button(self, text="Load Feb 2020 training/validation recordings - Green background", command=lambda: self.load_feb_2020_training_recordings()) # https://effbot.org/tkinterbook/canvas.htm))
+        load_feb_2020_training_recordings_button.grid(column=0, columnspan=2, row=75) 
+        
+        load_march_2020_test_recordings_button = ttk.Button(self, text="Load March 2020 Test recordings - Yellow background", command=lambda: self.load_march_2020_test_recordings()) # https://effbot.org/tkinterbook/canvas.htm))
+        load_march_2020_test_recordings_button.grid(column=0, columnspan=2, row=80) 
        
         first_not_yet_analysed_recording_button = ttk.Button(self, text="First Recording - not yet analysed", command=lambda: self.reload_recordings_for_creating_test_data(self.marked_as_what_combobox.get())) # https://effbot.org/tkinterbook/canvas.htm))
         first_not_yet_analysed_recording_button.grid(column=0, columnspan=1, row=100) 
@@ -762,12 +794,18 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
 
         
         
-        actual_label_confirmed = ttk.Label(self, text="SET Actual Confirmed", font=LARGE_FONT)
-        actual_label_confirmed.grid(column=0, columnspan=1, row=201)
+        actual_label_confirmed = ttk.Label(self, text="3) Use the radio buttons below to select the noise/call and then use left mouse button to click and drag on spectrogram.", font=LARGE_FONT)
+        actual_label_confirmed.grid(column=0, columnspan=3, row=180)
+        
+        actual_label_confirmed = ttk.Label(self, text="3b) When you release the left mouse button, the noise/call will be saved to the database")
+        actual_label_confirmed.grid(column=0, columnspan=3, row=181)
+        
+        actual_label_confirmed = ttk.Label(self, text="3c) Click with the right mouse button to delete the noise/call from the database")
+        actual_label_confirmed.grid(column=0, columnspan=3, row=182)
               
         self.actual_confirmed = tk.StringVar()
 
-        actual_confirmed_radio_button_morepork_classic = ttk.Radiobutton(self,text='Morepork more-pork', variable=self.actual_confirmed, value='morepork_more-pork',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_morepork_classic = ttk.Radiobutton(self,text='Morepork more-pork (green box)', variable=self.actual_confirmed, value='morepork_more-pork',command=lambda: self.confirm_actual())
         actual_confirmed_radio_button_morepork_classic.grid(column=0, columnspan=1, row=202)               
         
         actual_confirmed_radio_button_unknown = ttk.Radiobutton(self,text='Unknown', variable=self.actual_confirmed, value='unknown',command=lambda: self.confirm_actual())
@@ -817,7 +855,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         actual_confirmed_radio_button_car_horn.grid(column=0, columnspan=1, row=205)
         actual_confirmed_radio_button_fire_work = ttk.Radiobutton(self,text='Fire work', variable=self.actual_confirmed, value='fire_work',command=lambda: self.confirm_actual())
         actual_confirmed_radio_button_fire_work.grid(column=1, columnspan=1, row=205)
-        actual_confirmed_radio_button_maybe_morepork_more_pork = ttk.Radiobutton(self,text='Maybe Morepork more-pork', variable=self.actual_confirmed, value='maybe_morepork_more-pork',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_maybe_morepork_more_pork = ttk.Radiobutton(self,text='Maybe Morepork more-pork (yellow box)', variable=self.actual_confirmed, value='maybe_morepork_more-pork',command=lambda: self.confirm_actual())
         actual_confirmed_radio_button_maybe_morepork_more_pork.grid(column=2, columnspan=1, row=205)
         actual_confirmed_radio_button_music = ttk.Radiobutton(self,text='Music', variable=self.actual_confirmed, value='music',command=lambda: self.confirm_actual())
         actual_confirmed_radio_button_music.grid(column=3, columnspan=1, row=205)  
@@ -832,7 +870,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         back_to_home_button = ttk.Button(self, text="Back to Home", command=lambda: controller.show_frame(HomePage))
         back_to_home_button.grid(column=0, columnspan=1, row=1000) 
         
-        self.display_spectrogram()
+#         self.display_spectrogram()
 
 class UpdateTrainingDataUsingAModelsPredictions(tk.Frame):    
     
