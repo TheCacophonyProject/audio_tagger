@@ -293,7 +293,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
               
         recording_id = self.recordings[self.current_recordings_index][0]
         duration = self.recordings[self.current_recordings_index][3]
-        test_data_rectangles = functions.retrieve_test_data_from_database(recording_id)     
+        test_data_rectangles = functions.retrieve_training_validation_test_data_from_database(recording_id)     
                           
         for test_data_rectangle in test_data_rectangles:
             recording_id = test_data_rectangle[0]
@@ -321,7 +321,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         
     def load_all_training_recordings(self):
         self.config(bg="blue")
-        self.recordings = functions.retrieve_recordings(None, self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
+        self.recordings = functions.retrieve_recordings("not_march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
         self.current_recordings_index = 0
         self.display_spectrogram()
              
@@ -494,7 +494,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
                 return
             
         # If it gets here then it didn't find the recording so display a message
-        messagebox.showinfo("Oops", "That recording id is not in the available test recordings")
+        messagebox.showinfo("Oops", f"Recording id {recording_to_load_id} is not one of the currently loaded recordings")
         
         
                 
@@ -642,11 +642,11 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         load_march_2020_test_recordings_button = ttk.Button(self, text="Load March 2020 Test recordings - Yellow background", command=lambda: self.load_march_2020_test_recordings()) # https://effbot.org/tkinterbook/canvas.htm))
         load_march_2020_test_recordings_button.grid(column=0, columnspan=2, row=80) 
        
-        first_not_yet_analysed_recording_button = ttk.Button(self, text="First Recording - not yet analysed", command=lambda: self.reload_recordings_for_creating_test_data(self.marked_as_what_combobox.get())) # https://effbot.org/tkinterbook/canvas.htm))
-        first_not_yet_analysed_recording_button.grid(column=0, columnspan=1, row=100) 
-        
-        first_recording_button = ttk.Button(self, text="First Recording (includes already analysed)", command=lambda: self.reload_recordings_for_creating_test_data(None)) # https://effbot.org/tkinterbook/canvas.htm))
-        first_recording_button.grid(column=0, columnspan=1, row=110) 
+#         first_not_yet_analysed_recording_button = ttk.Button(self, text="First Recording - not yet analysed", command=lambda: self.reload_recordings_for_creating_test_data(self.marked_as_what_combobox.get())) # https://effbot.org/tkinterbook/canvas.htm))
+#         first_not_yet_analysed_recording_button.grid(column=0, columnspan=1, row=100) 
+#         
+#         first_recording_button = ttk.Button(self, text="First Recording (includes already analysed)", command=lambda: self.reload_recordings_for_creating_test_data(None)) # https://effbot.org/tkinterbook/canvas.htm))
+#         first_recording_button.grid(column=0, columnspan=1, row=110) 
                        
         previous_recording_button = ttk.Button(self, text="Previous Recording", command=lambda: self.previous_recording()) # https://effbot.org/tkinterbook/canvas.htm))
         previous_recording_button.grid(column=1, columnspan=1, row=100) 
