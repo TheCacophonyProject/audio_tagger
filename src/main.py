@@ -261,7 +261,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             self.canvas.delete(self.temp_rectangle) 
             self.canvas.itemconfig(aRectangle_id, tags=(str(recording_id), str(start_position_seconds), str(finish_position_seconds), str(lower_freq_hertz), str(upper_freq_hertz) , self.actual_confirmed.get()))
                                   
-            result = functions.insert_test_data_into_database(recording_id, start_position_seconds, finish_position_seconds, lower_freq_hertz, upper_freq_hertz, self.actual_confirmed.get())
+            result = functions.insert_data_into_database(recording_id, start_position_seconds, finish_position_seconds, lower_freq_hertz, upper_freq_hertz, self.actual_confirmed.get(), parameters.cacophony_user_name)
             if not result:                
                 messagebox.showinfo("Oops", "Could not update database - is it locked?")   
                 self.canvas.delete(aRectangle_id) 

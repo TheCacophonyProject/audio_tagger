@@ -431,11 +431,15 @@ def update_recording_information_for_single_recording(recording_id):
             nightRecording = 'true'   
                    
 #     update_recording_in_database(recordingDateTime, relativeToDawn, relativeToDusk, duration, locationLat, locationLong, version, batteryLevel, phoneModel, androidApiLevel, deviceId, nightRecording, device_name, recording_id, recordingDateTimeNZ)
-    update_recording_in_database(recordingDateTime, relativeToDawn, relativeToDusk, duration, locationLat, locationLong, version, batteryLevel, phoneModel, androidApiLevel, deviceId, nightRecording, device_name, recording_id, recordingDateTimeNZ)
+    # determine original recording sample rate
+    sample_rate = get_original_recording_sample_rate(recording_id)
+    
+    
+    update_recording_in_database(recordingDateTime, relativeToDawn, relativeToDusk, duration, locationLat, locationLong, version, batteryLevel, phoneModel, androidApiLevel, deviceId, nightRecording, device_name, recording_id, recordingDateTimeNZ, sample_rate)
     print('Finished updating recording information for recording ', recording_id)
                
   
-def update_recording_in_database(recordingDateTime, relativeToDawn, relativeToDusk, duration, locationLat, locationLong, version, batteryLevel, phoneModel,androidApiLevel, deviceId, nightRecording, device_name, recording_id, recordingDateTimeNZ):
+def update_recording_in_database(recordingDateTime, relativeToDawn, relativeToDusk, duration, locationLat, locationLong, version, batteryLevel, phoneModel,androidApiLevel, deviceId, nightRecording, device_name, recording_id, recordingDateTimeNZ, sample_rate):
     try:
 #         conn = get_database_connection()
         # https://www.sqlitetutorial.net/sqlite-python/update/
@@ -453,10 +457,11 @@ def update_recording_in_database(recordingDateTime, relativeToDawn, relativeToDu
                       deviceId = ?,
                       nightRecording = ?,
                       device_name = ?,
-                      recordingDateTimeNZ = ?
+                      recordingDateTimeNZ = ?,
+                      sample_rate = sample_rate
                   WHERE recording_id = ? '''
         cur = get_database_connection().cursor()
-        cur.execute(sql, (recordingDateTime, relativeToDawn, relativeToDusk, duration, locationLat, locationLong, version, batteryLevel, phoneModel, androidApiLevel, deviceId, nightRecording, device_name, recordingDateTimeNZ, recording_id))
+        cur.execute(sql, (recordingDateTime, relativeToDawn, relativeToDusk, duration, locationLat, locationLong, version, batteryLevel, phoneModel, androidApiLevel, deviceId, nightRecording, device_name, recordingDateTimeNZ, recording_id, sample_rate))
         get_database_connection().commit()
     except Exception as e:
         print(e, '\n')
@@ -2036,21 +2041,24 @@ def convert_x_or_y_postion_percent_to_x_or_y_spectrogram_image_postion(spectrogr
 def save_spectrogram_selection(selection_to_save):
     print("selection_to_save ", selection_to_save)
     
-def insert_test_data_into_database(recording_id, start_time_seconds, finish_time_seconds, lower_freq_hertz, upper_freq_hertz, what ):    
+def insert_data_into_database(recording_id, start_time_seconds, finish_time_seconds, lower_freq_hertz, upper_freq_hertz, what, username):    
     
     cur1 = get_database_connection().cursor()
-    cur1.execute("SELECT device_super_name, device_name, recordingDateTime, recordingDateTimeNZ FROM recordings WHERE recording_id = ?", (recording_id,)) 
+    cur1.execute("SELECT device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, sample_rate FROM recordings WHERE recording_id = ?", (recording_id,)) 
     rows = cur1.fetchall() 
     device_super_name = rows[0][0]  
     device_name = rows[0][1]
     recordingDateTime = rows[0][2]  
     recordingDateTimeNZ = rows[0][3] 
+    sample_rate = rows[0][4] 
+    
+    date_created = datetime.datetime.now()
     
     try:     
-        sql = ''' INSERT INTO test_data(recording_id, start_time_seconds, finish_time_seconds, lower_freq_hertz, upper_freq_hertz, what, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ)
-                  VALUES(?,?,?,?,?,?,?,?,?,?) '''
+        sql = ''' INSERT INTO test_data(recording_id, start_time_seconds, finish_time_seconds, lower_freq_hertz, upper_freq_hertz, what, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, username, sample_rate, date_created)
+                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) '''
         cur2 = get_database_connection().cursor()
-        cur2.execute(sql, (recording_id, start_time_seconds, finish_time_seconds, lower_freq_hertz, upper_freq_hertz, what, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ ))
+        cur2.execute(sql, (recording_id, start_time_seconds, finish_time_seconds, lower_freq_hertz, upper_freq_hertz, what, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ, username, sample_rate, date_created ))
         get_database_connection().commit()
         return True
     except Exception as e:
@@ -3088,4 +3096,127 @@ def test_data_analysis_using_version_7_onsets_with_spectrogram_based_prediction(
         get_database_connection().commit()
 
 
+def copy_confirmed_onests_into_training_validation_test_data_table():
+    cur = get_database_connection().cursor()
+    cur.execute("SELECT recording_id, start_time_seconds, duration_seconds, actual_confirmed, device_super_name, device_name, recordingDateTime, recordingDateTimeNZ from onsets WHERE actual_confirmed IS NOT NULL")
+    onset_rows = cur.fetchall() 
+    num_of_rows = len(onset_rows)
+    print("num_of_rows ", num_of_rows)
     
+    count=0
+    for onset_row in onset_rows:
+        count+=1
+        print(f"Processing {count} of {num_of_rows}")
+        recording_id = onset_row[0]
+        start_time_seconds = onset_row[1]
+        duration_seconds = onset_row[2]
+        actual_confirmed = onset_row[3]
+        device_super_name = onset_row[4]
+        device_name = onset_row[5]
+        recordingDateTime = onset_row[6]
+        recordingDateTimeNZ = onset_row[7]
+        
+        finish_time_seconds = start_time_seconds + duration_seconds        
+        date_created = datetime.datetime.now()
+        
+        cur.execute("SELECT sample_rate FROM recordings WHERE recording_id = '" + str(recording_id) + "'")
+        rows = cur.fetchall()        
+        
+        sample_rate = rows[0][0]
+        
+        try:
+            sql = ''' INSERT INTO training_validation_test_data(recording_id, start_time_seconds, finish_time_seconds, device_name, device_super_name, what, recordingDateTime, recordingDateTimeNZ, sample_rate, username, date_created)
+                  VALUES(?,?,?,?,?,?,?,?,?,?,?) '''
+            cur = get_database_connection().cursor()
+            cur.execute(sql, (recording_id, start_time_seconds, finish_time_seconds, device_name, device_super_name, actual_confirmed, recordingDateTime, recordingDateTimeNZ, sample_rate, parameters.cacophony_user_name, date_created))
+           
+            get_database_connection().commit()
+        except Exception as e:
+            print(e, '\n')
+            print('\t\tUnable to insert recording ' + str(recording_id), '\n')
+        
+        
+        
+        
+        
+def get_original_recording_sample_rate(recording_id):   
+    try:
+        recordings_folder_with_path = parameters.downloaded_recordings_folder
+        filename = str(recording_id) + ".m4a"
+        audio_in_path = recordings_folder_with_path + "/" + filename
+    
+    
+        y, sr = librosa.load(audio_in_path, sr=None, mono=True, duration=1) 
+        
+    except Exception as e:
+        y = sr = -1
+    
+    return sr
+        
+        
+def update_database_recordings_with_original_sample_rate():
+    cur = get_database_connection().cursor()
+    cur.execute("SELECT recording_id from recordings WHERE sample_rate IS NULL")
+    recordings = cur.fetchall()  
+    row_count = len(recordings)
+    count = 0
+    for row in recordings:
+        count+=1
+        print(count, " of ", row_count)
+        
+        recording_id = row[0]
+        try:
+            sample_rate = get_original_recording_sample_rate(recording_id)
+        except:
+            print("Problem with recording " + str(recording_id))
+            continue
+        print("sample_rate is ", sample_rate)
+        
+        try:
+         
+            sql = ''' UPDATE recordings 
+                      SET sample_rate = ?                      
+                      WHERE recording_id = ? '''
+
+            cur.execute(sql, (sample_rate, recording_id))
+            get_database_connection().commit()
+            
+#             sql2 = ''' UPDATE training_data 
+#                       SET sample_rate = ?                      
+#                       WHERE recording_id = ? '''
+# 
+#             cur.execute(sql2, (sample_rate, recording_id))
+#             get_database_connection().commit()
+#             
+#             sql2 = ''' UPDATE model_run_result 
+#                       SET sample_rate = ?                      
+#                       WHERE recording_id = ? '''
+# #             cur = get_database_connection().cursor()
+#             cur.execute(sql2, (sample_rate, recording_id))
+#             get_database_connection().commit()
+#             
+#             sql3 = ''' UPDATE test_data 
+#                       SET sample_rate = ?                      
+#                       WHERE recording_id = ? '''
+# #             cur = get_database_connection().cursor()
+#             cur.execute(sql3, (sample_rate, recording_id))
+#             get_database_connection().commit()
+            
+            
+        except Exception as e:
+            print(e, '\n')
+            print('\t\tUnable to update recording ' + str(recording_id), '\n')
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
