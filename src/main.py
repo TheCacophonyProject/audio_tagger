@@ -575,14 +575,14 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         min_freq_label = ttk.Label(self, text="Enter the minimum frequency (Hz)")
         min_freq_label.grid(column=0, columnspan=1, row=50)             
 
-        self.min_freq = StringVar(value=str(parameters.morepork_min_freq))
+        self.min_freq = StringVar(value=str(parameters.morepork_min_freq_display))
         min_freq_entry = tk.Entry(self,  textvariable=self.min_freq, width=30)
         min_freq_entry.grid(column=0, columnspan=1, row=51)        
         
         max_freq_label = ttk.Label(self, text="Enter the maximum frequency (Hz)")
         max_freq_label.grid(column=1, columnspan=1, row=50)             
 
-        self.max_freq = StringVar(value=str(parameters.morepork_max_freq))
+        self.max_freq = StringVar(value=str(parameters.morepork_max_freq_display))
         max_freq_entry = tk.Entry(self,  textvariable=self.max_freq, width=30)
         max_freq_entry.grid(column=1, columnspan=1, row=51)
         
@@ -590,7 +590,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         horizonal_ref_line_freq_label.grid(column=2, columnspan=1, row=50)
         
         
-        self.horizonal_ref_line_freq = StringVar(value=str(parameters.morepork_expected_freq))      
+        self.horizonal_ref_line_freq = StringVar(value=str(parameters.morepork_expected_freq_display))      
         horizonal_ref_line_freq_entry = tk.Entry(self,  textvariable=self.horizonal_ref_line_freq, width=30)
         horizonal_ref_line_freq_entry.grid(column=2, columnspan=1, row=51)  
         

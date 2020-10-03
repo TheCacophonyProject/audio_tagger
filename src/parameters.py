@@ -50,7 +50,10 @@ temp_display_images_folder = 'temp_display_images'
 morepork_more_pork_call_duration = 0.9
 morepork_min_freq = 400
 morepork_max_freq = 2000
-morepork_expected_freq = 900
+
+morepork_min_freq_display = 400
+morepork_max_freq_display = 6000
+morepork_expected_freq_display = 900
 
 
 test_data_canvas_height = 1000
