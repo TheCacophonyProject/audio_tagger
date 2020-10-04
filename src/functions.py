@@ -1191,7 +1191,8 @@ def get_spectrogram_for_creating_training_and_test_data(recording_id, min_freq, 
         
         plt.axis('off') # no axis
         plt.axes([0., 0., 1., 1.], frameon=False, xticks=[], yticks=[]) # Remove the white edge
-        librosa.display.specshow(mel_spectrogram, cmap='binary') 
+        librosa.display.specshow(mel_spectrogram, cmap='binary')
+#         librosa.display.specshow(mel_spectrogram) 
        
         plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
         plt.close()
