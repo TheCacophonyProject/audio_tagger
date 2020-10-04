@@ -344,7 +344,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             recording_date_time = self.recordings[self.current_recordings_index][1]
             recording_device_super_name = self.recordings[self.current_recordings_index][4]
     
-            self.spectrogram_image = functions.get_mel_spectrogram_for_creating_training_and_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))
+            self.spectrogram_image = functions.get_spectrogram_for_creating_training_and_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))
             
             self.image = self.canvas.create_image(0, 0, image=self.spectrogram_image, anchor=NW)   
             self.canvas.configure(height=self.spectrogram_image.height())             
@@ -398,7 +398,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             recording_date_time = self.recordings[self.current_recordings_index][1]
             recording_device_super_name = self.recordings[self.current_recordings_index][4]
     
-            self.spectrogram_image = functions.get_mel_spectrogram_for_creating_training_and_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))  
+            self.spectrogram_image = functions.get_spectrogram_for_creating_training_and_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))  
             self.canvas.configure(height=self.spectrogram_image.height())  
             self.image = self.canvas.create_image(0, 0, image=self.spectrogram_image, anchor=NW)  
                                  

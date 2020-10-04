@@ -29,12 +29,9 @@ from pytz import timezone
 import sys
 from tkinter import filedialog
 
-
-
-
 import warnings
 
-
+from matplotlib.pyplot import specgram
 
 
 
@@ -1165,7 +1162,9 @@ def scale_minmax(X, min=0.0, max=1.0):
     X_scaled = X_std * (max - min) + min
     return X_scaled        
 
-def get_mel_spectrogram_for_creating_training_and_test_data(recording_id, min_freq, max_freq):
+
+
+def get_spectrogram_for_creating_training_and_test_data(recording_id, min_freq, max_freq):
     
     print("min_freq ", min_freq)
     print("max_freq ", max_freq)
@@ -1183,19 +1182,17 @@ def get_mel_spectrogram_for_creating_training_and_test_data(recording_id, min_fr
        
         image_out_path = temp_display_images_folder_path + '/' + image_out_name
         
-        y, sr = librosa.load(audio_in_path, sr=None)         
-
-#         y = butter_bandpass_filter(y, min_freq, max_freq, sr, order=4)  
-#         y = butter_bandpass_filter(y, min_freq, max_freq, sr)    
-#         y = noise_reduce(y, sr) 
-        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq,fmax=max_freq, n_mels=32)
+        y, sr = librosa.load(audio_in_path, sr=None)   
         
+        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq,fmax=max_freq, n_mels=32)  
 
-         
+             
+        plt.figure()
+        
         plt.axis('off') # no axis
         plt.axes([0., 0., 1., 1.], frameon=False, xticks=[], yticks=[]) # Remove the white edge
-        librosa.display.specshow(mel_spectrogram, norm=mcolors.PowerNorm(0.2), cmap='binary')                
-
+        librosa.display.specshow(mel_spectrogram, cmap='binary') 
+       
         plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
         plt.close()
         
@@ -1203,9 +1200,7 @@ def get_mel_spectrogram_for_creating_training_and_test_data(recording_id, min_fr
         
     except Exception as e:
         print(e, '\n')
-        print('Error processing onset ', onset)
-        
-
+        print('Error processing spectrogram ', onset)
            
 def get_single_waveform_image(recording_id, start_time_seconds, duration_seconds):
 
