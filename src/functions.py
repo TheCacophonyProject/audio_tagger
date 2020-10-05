@@ -33,6 +33,9 @@ import warnings
 
 from matplotlib.pyplot import specgram
 
+from scipy import signal
+
+from scipy.fft import fftshift
 
 
 conn = None
@@ -1145,9 +1148,13 @@ def get_single_create_focused_mel_spectrogram_return_path(recording_id, start_ti
         y_part = y[start_position_array:end_position_array]  
         mel_spectrogram = librosa.feature.melspectrogram(y=y_part, sr=sr, n_mels=32, fmin=700,fmax=1000)
         
+        
         plt.axis('off') # no axis
         plt.axes([0., 0., 1., 1.], frameon=False, xticks=[], yticks=[]) # Remove the white edge
-        librosa.display.specshow(mel_spectrogram, cmap='binary') #https://matplotlib.org/examples/color/colormaps_reference.html
+#         librosa.display.specshow(mel_spectrogram, cmap='binary') #https://matplotlib.org/examples/color/colormaps_reference.html
+        
+        librosa.display.specshow(librosa.power_to_db(mel_spectrogram**2, ref=np.max), sr=sr, cmap='binary')
+        
         plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
         plt.close()
         
@@ -1182,17 +1189,39 @@ def get_spectrogram_for_creating_training_and_test_data(recording_id, min_freq, 
        
         image_out_path = temp_display_images_folder_path + '/' + image_out_name
         
-        y, sr = librosa.load(audio_in_path, sr=None)   
+        y, sr = librosa.load(audio_in_path, sr=None)  
         
-        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq,fmax=max_freq, n_mels=32)  
+#         X = librosa.stft(y.astype('float'))
+#         
+#         Xdb = librosa.amplitude_to_db(X)
+        
+#         librosa.display.specshow(Xdb, sr=sample_rate, x_axis='time', y_axis='hz')
+#         plt.show()
+        
+#         y_amplified = y * 2
+#          
+#         y_amplified = np.int16(y/np.max(np.abs(y)) * 32767)
+#         
+        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq,fmax=max_freq, n_mels=32)
+# #         mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq,fmax=max_freq) 
+#         mel_spectrogram = librosa.feature.melspectrogram(y=y_amplified, sr=sr, fmin=min_freq,fmax=max_freq,window='hann') 
+
+#         mel_spectrogram = librosa.feature.melspectrogram(y=y_amplified, sr=sr, fmin=min_freq,fmax=max_freq, n_mels=32)
+        
+          
+        
+#         frequencies, times, spectrogram = signal.spectrogram(y, sr)
+#         f, t, Sxx = signal.spectrogram(y, sr)   
 
              
         plt.figure()
         
         plt.axis('off') # no axis
         plt.axes([0., 0., 1., 1.], frameon=False, xticks=[], yticks=[]) # Remove the white edge
-        librosa.display.specshow(mel_spectrogram, cmap='binary')
-#         librosa.display.specshow(mel_spectrogram) 
+#         librosa.display.specshow(mel_spectrogram, cmap='binary')
+        librosa.display.specshow(librosa.power_to_db(mel_spectrogram**2, ref=np.max), sr=sr, cmap='binary')
+#         plt.imshow(Sxx)
+#         librosa.display.specshow(Xdb, cmap='binary')
        
         plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
         plt.close()
@@ -2471,7 +2500,53 @@ def update_these_recordings_have_been_analysed_for_with_username_date():
         
         
         
-        
+def test_spectrogram():
+    
+    audio_filename = '547872.m4a'
+    audio_in_path = parameters.downloaded_recordings_folder + '/' +  audio_filename 
+    image_out_name = 'temp_spectrogram.jpg'
+    print('image_out_name', image_out_name)    
+    
+    temp_display_images_folder_path = parameters.base_folder + '/' + parameters.run_folder + '/' + parameters.temp_display_images_folder        
+   
+    image_out_path = temp_display_images_folder_path + '/' + image_out_name
+    
+    y, sr = librosa.load(audio_in_path, sr=None) 
+#     S = np.abs(librosa.stft(y))
+    mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=0,fmax=2000)
+    
+    plt.figure()
+    plt.axis('off') # no axis
+    plt.axes([0., 0., 1., 1.], frameon=False, xticks=[], yticks=[]) # Remove the white edge
+    
+#     librosa.display.specshow(librosa.power_to_db(S**2, ref=np.max), sr=sr)
+    librosa.display.specshow(librosa.power_to_db(mel_spectrogram**2, ref=np.max), sr=sr, cmap='binary')
+    
+    plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
+    plt.close()
+    
+#     
+#     
+#     maxElement = np.amax(y)
+#     print(maxElement)
+#     minElement = np.amin(y)
+#     print(minElement)
+#     y=y*10
+#     mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=0,fmax=2000)
+#     
+#     plt.figure()
+#         
+#     plt.axis('off') # no axis
+#     plt.axes([0., 0., 1., 1.], frameon=False, xticks=[], yticks=[]) # Remove the white edge
+#     librosa.display.specshow(mel_spectrogram, cmap='binary')
+# #         plt.imshow(Sxx)
+# #         librosa.display.specshow(Xdb, cmap='binary')
+#        
+#     plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
+#     plt.close()
+    
+    
+   
         
         
         
