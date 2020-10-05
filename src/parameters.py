@@ -48,8 +48,8 @@ temp_display_images_folder = 'temp_display_images'
 
 
 morepork_more_pork_call_duration = 0.9
-morepork_min_freq = 400
-morepork_max_freq = 2000
+morepork_min_freq_for_model_spectrograms = 600
+morepork_min_freq_for_model_spectrograms = 1100
 
 morepork_min_freq_display = 600
 morepork_max_freq_display = 1200
