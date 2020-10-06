@@ -1935,7 +1935,8 @@ def get_spectrogram_rectangle_selection_colour(what):
         "morepork_more-pork": "green",
         "maybe_morepork_more-pork":"yellow",
         "morepork_more-pork_part":"blue",
-        "cow": "dark orange"        
+        "cow": "dark orange",    
+        "morepork_croaking": "cyan2"    
     }
     return switcher.get(what, "red")
     
