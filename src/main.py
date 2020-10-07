@@ -172,8 +172,9 @@ class RecordingsPage(tk.Frame):
         back_to_home_button.grid(column=0, columnspan=1, row=20)               
 
 
-class ManuallyCreateTrainingAndTestDataPage(tk.Frame):   
+class ManuallyCreateTrainingAndTestDataPage(tk.Frame):      
    
+     
         
     def leftMousePressedcallback(self, event):
     
@@ -321,21 +322,21 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         
     def load_all_training_recordings(self):
         self.config(bg="blue")
-        self.recordings = functions.retrieve_recordings("not_march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
+        self.recordings = functions.retrieve_recordings("not_march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get())
         self.current_recordings_index = 0
         self.display_spectrogram()
              
     def load_feb_2020_training_recordings(self):
         self.config(bg="green")
-        self.recordings = functions.retrieve_recordings("feb_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
+        self.recordings = functions.retrieve_recordings("feb_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get())
         self.current_recordings_index = 0
         self.display_spectrogram()
         
     def load_march_2020_test_recordings(self):
         self.config(bg="yellow")
-        self.recordings = functions.retrieve_recordings("march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get())
+        self.recordings = functions.retrieve_recordings("march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get())
         self.current_recordings_index = 0   
-        self.display_spectrogram()      
+        self.display_spectrogram()           
                 
     def display_spectrogram(self):
         try:
@@ -507,7 +508,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         recording_id = self.recordings[self.current_recordings_index][0]
         duration_of_recording = self.recordings[self.current_recordings_index][3]
         
-        model_predictions = functions.get_model_predictions(recording_id) 
+        model_predictions = functions.get_model_predictions(recording_id, self.run_names_combo.get()) 
         for model_prediction in model_predictions:
             startTime = model_prediction[0]
 #             duration_of_prediction =  model_prediction[1] 
@@ -562,6 +563,8 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         tk.Frame.__init__(self, parent)    
         
         self.playing = False
+        
+        self.unique_model_run_names = functions.get_unique_model_run_names()
             
         self.temp_rectangle = None
         self.current_recordings_index = 0
@@ -602,8 +605,25 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         instruction_2 = ttk.Label(self, text="2) Use controls below to filter the recordings to use and then - Press one of the 3 'Load .... recordings' buttons", font=LARGE_FONT)
         instruction_2.grid(column=0, columnspan=3, row=60)   
         
+        run_names_label = ttk.Label(self, text="Model Run Names")
+        run_names_label.grid(column=2, columnspan=1, row=61)      
+        
+#         run_names_label = ttk.Label(self, text="Model Run Names2")
+#         run_names_label.grid(column=2, columnspan=1, row=62)      
+                                    
+        self.run_name = StringVar()
+        self.run_names_combo = ttk.Combobox(self, textvariable=self.run_name, values=self.unique_model_run_names)
+        
+        self.run_names_combo.grid(column=2, columnspan=1,row=62) 
+       
+        
+        if len(self.unique_model_run_names) > 0:
+            self.run_names_combo.current(0)           
+#             self.run_names_combo.current(len(self.unique_model_run_names) - 1)    
+      
+        
         self.model_must_predict_what_combobox = ttk.Combobox(self,  values=parameters.class_names.split(","), width=30)                   
-        self.model_must_predict_what_combobox.grid(column=2, columnspan=1, row=61)  
+        self.model_must_predict_what_combobox.grid(column=2, columnspan=1, row=64)  
         self.model_must_predict_what_combobox.current(0)
         
         self.retrieve_recording_even_if_not_tagged_by_model_human = BooleanVar()
@@ -691,7 +711,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         specific_recording_id_entry = tk.Entry(self,  textvariable=self.specific_recording_id, width=30)
         specific_recording_id_entry.grid(column=4, columnspan=1, row=150)        
         
-        retrieve_specific_recording_id_button = ttk.Button(self, text="Retrieve this recording (has to be in test_data)", command=lambda: self.load_specific_recording_from_creating_test_data())
+        retrieve_specific_recording_id_button = ttk.Button(self, text="Retrieve this recording (has to be in loaded data)", command=lambda: self.load_specific_recording_from_creating_test_data())
         retrieve_specific_recording_id_button.grid(column=4, columnspan=1, row=151)          
 
         self.specific_recording_index = StringVar(value='0')      

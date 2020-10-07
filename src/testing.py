@@ -14,3 +14,5 @@ import functions
 # functions.update_these_recordings_have_been_analysed_for_with_username_date()
 
 functions.test_spectrogram()
+
+functions.update_training_validation_test_data_with_frequencies()

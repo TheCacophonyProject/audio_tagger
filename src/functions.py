@@ -1273,7 +1273,7 @@ def get_image_for_for_creating_test_data(image_name_path):
 
 def get_unique_model_run_names():   
     cur = get_database_connection().cursor()
-    cur.execute("SELECT DISTINCT modelRunName FROM model_run_result") 
+    cur.execute("SELECT DISTINCT model_run_name FROM model_run_result") 
     rows = cur.fetchall()  
     
     unique_model_run_names = []
@@ -1778,7 +1778,8 @@ def retrieve_training_validation_test_data_from_database(recording_id):
     training_validation_test_data_rows = cur.fetchall() 
     return training_validation_test_data_rows
     
-def retrieve_recordings(date_range, include_all_test_validation_recordings, include_recordings_with_model_predictions, include_recordings_that_have_been_manually_analysed, model_must_predict_what, probability_cutoff):
+def retrieve_recordings(date_range, include_all_test_validation_recordings, include_recordings_with_model_predictions, include_recordings_that_have_been_manually_analysed, model_must_predict_what, probability_cutoff, model_run_name):
+#     print("model_run_name ", model_run_name)
     
     table_name = 'recordings'
     
@@ -1800,24 +1801,23 @@ def retrieve_recordings(date_range, include_all_test_validation_recordings, incl
     
     probability_cutoff_float = float(probability_cutoff)
     
-#     if firstDate == None: 
-#         sqlBuilding = "select recording_id, datetime(recordingDateTime,'localtime') as recordingDateTimeNZ, device_name, duration, device_super_name from " + table_name
-#     else:
-#         sqlBuilding = "select recording_id, datetime(recordingDateTime,'localtime') as recordingDateTimeNZ, device_name, duration, device_super_name from " + table_name + " where recordingDateTimeNZ BETWEEN '" + firstDate + "' AND '" + lastDate + "'"
-   
+
         
     if not include_all_test_validation_recordings:        
     
         if include_recordings_with_model_predictions:
             if probability_cutoff_float == 0:
-                sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE modelRunName = '" + parameters.model_run_name + "' AND predictedByModel = '" + model_must_predict_what + "')"
+                sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE model_run_name = '" + model_run_name + "' AND predicted_by_model = '" + model_must_predict_what + "')"
             else:
-                sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE modelRunName = '" + parameters.model_run_name + "' AND predictedByModel = '" + model_must_predict_what + "' AND probability > " + probability_cutoff + ")"
+                sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE model_run_name = '" + model_run_name + "' AND predicted_by_model = '" + model_must_predict_what + "' AND probability > " + probability_cutoff + ")"
            
                 
         if include_recordings_that_have_been_manually_analysed:
             sqlBuilding += " AND recording_id IN (SELECT recording_id FROM training_validation_test_data)"       
-            
+     
+    
+              
+
     sqlBuilding += " ORDER BY recording_id ASC"    
        
     print("The sql is: ", sqlBuilding)
@@ -1940,12 +1940,12 @@ def get_spectrogram_rectangle_selection_colour(what):
     }
     return switcher.get(what, "red")
     
-def get_model_predictions(recording_id):
+def get_model_predictions(recording_id, model_run_name):
     table_name = 'model_run_result'        
     
     cur = get_database_connection().cursor()    
 
-    cur.execute("select startTime, duration, predictedByModel, probability, actual_confirmed from " + table_name + " where recording_id = ? and modelRunName = ?", (recording_id, parameters.model_run_name) )
+    cur.execute("select startTime, duration, predicted_by_model, probability, actual_confirmed from " + table_name + " where recording_id = ? and model_run_name = ?", (recording_id, model_run_name) )
    
     records = cur.fetchall()
                   
@@ -2524,7 +2524,14 @@ def test_spectrogram():
 #     plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
 #     plt.close()
     
-    
+def update_training_validation_test_data_with_frequencies():       
+    sql = ''' UPDATE training_validation_test_data 
+                  SET lower_freq_hertz = ?,
+                      upper_freq_hertz = ?                      
+                  WHERE lower_freq_hertz IS NULL '''
+    cur = get_database_connection().cursor()
+    cur.execute(sql, ('700', '1100'))
+    get_database_connection().commit()
    
         
         
