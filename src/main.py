@@ -290,7 +290,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             self.canvas.delete(selected_item_id)       
         
 
-    def retrieve_test_data_from_database_and_add_rectangles_to_image(self):  
+    def retrieve_training_validation_test_data_from_database_and_add_rectangles_to_image(self):  
               
         recording_id = self.recordings[self.current_recordings_index][0]
         duration = self.recordings[self.current_recordings_index][3]
@@ -364,7 +364,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             
             self.canvas.bind("<Button-3>", self.rightMousePressedcallback) 
             
-            self.retrieve_test_data_from_database_and_add_rectangles_to_image()    
+            self.retrieve_training_validation_test_data_from_database_and_add_rectangles_to_image()    
             
             if self.show_model_predictions.get():
                 self.display_model_predictions()                
@@ -404,7 +404,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             self.image = self.canvas.create_image(0, 0, image=self.spectrogram_image, anchor=NW)  
                                  
     
-            self.retrieve_test_data_from_database_and_add_rectangles_to_image()  
+            self.retrieve_training_validation_test_data_from_database_and_add_rectangles_to_image()  
             
             if self.show_model_predictions.get():
                 self.display_model_predictions()               
@@ -612,7 +612,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
 #         run_names_label.grid(column=2, columnspan=1, row=62)      
                                     
         self.run_name = StringVar()
-        self.run_names_combo = ttk.Combobox(self, textvariable=self.run_name, values=self.unique_model_run_names)
+        self.run_names_combo = ttk.Combobox(self, textvariable=self.run_name, values=self.unique_model_run_names, width=50)
         
         self.run_names_combo.grid(column=2, columnspan=1,row=62) 
        
