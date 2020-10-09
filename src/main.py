@@ -322,19 +322,19 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         
     def load_all_training_recordings(self):
         self.config(bg="blue")
-        self.recordings = functions.retrieve_recordings("not_march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get())
+        self.recordings = functions.retrieve_recordings("not_march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get())
         self.current_recordings_index = 0
         self.display_spectrogram()
              
     def load_feb_2020_training_recordings(self):
         self.config(bg="green")
-        self.recordings = functions.retrieve_recordings("feb_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get())
+        self.recordings = functions.retrieve_recordings("feb_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get())
         self.current_recordings_index = 0
         self.display_spectrogram()
         
     def load_march_2020_test_recordings(self):
         self.config(bg="yellow")
-        self.recordings = functions.retrieve_recordings("march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get())
+        self.recordings = functions.retrieve_recordings("march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get())
         self.current_recordings_index = 0   
         self.display_spectrogram()           
                 
@@ -550,6 +550,15 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
     def retrieve_all_test_recordings_checkbox_pressed(self): 
             self.retrieve_recordings_with_model_predictions.set(False)             
             self.retrieve_recordings_with_manual_analysis.set(False)        
+            
+#     def probability_greater_than_checkbox_pressed(self):
+#         self.probability_greater_than.set(True)
+#         self.probability_less_than.set(False)
+#         
+#     def probability_less_than_checkbox_pressed(self):
+#         self.probability_greater_than.set(False)
+#         self.probability_less_than.set(True)
+        
      
     def retrieve_model_or_manual_analysis_recordings_checkbox_pressed(self): 
         self.retrieve_recording_even_if_not_tagged_by_model_human.set(False)                
@@ -591,6 +600,9 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         
         horizonal_ref_line_freq_label = ttk.Label(self, text="Enter the frequency (Hz) of the horizontal reference line")
         horizonal_ref_line_freq_label.grid(column=2, columnspan=1, row=50)
+        
+        select_probability_label_1 = ttk.Label(self, text="Select Predicted probability condition")
+        select_probability_label_1.grid(column=3, columnspan=1, row=50)
         
         
         self.horizonal_ref_line_freq = StringVar(value=str(parameters.morepork_expected_freq_display))      
@@ -641,12 +653,22 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         show_model_predictions_Checkbuttton.grid(column=2, columnspan=1, row=66)
         self.show_model_predictions.set(True)
         
-        probability_label = ttk.Label(self, text="Predicted probability > than")
-        probability_label.grid(column=3, columnspan=1, row=61)
+        select_probability_label_2 = ttk.Label(self, text="Binary model range is 0 (certain) to 0.5 (uncertain)")
+        select_probability_label_2.grid(column=3, columnspan=1, row=51)
         
-        self.probability_combobox = ttk.Combobox(self,  values=["0","0.1", "0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9"], width=30)                   
+        self.probability_greater_less_than = StringVar()
+        self.probability_greater_less_than.set("greater")        
+      
+        probability_greater_than_Radiobutton = Radiobutton(self, text="Greater than >=", variable=self.probability_greater_less_than, value="greater")
+        probability_greater_than_Radiobutton.grid(column=3, columnspan=1, row=60)       
+        
+        probability_less_than_Radiobutton = Radiobutton(self, text="Less than <=", variable=self.probability_greater_less_than, value="less")
+        probability_less_than_Radiobutton.grid(column=3, columnspan=1, row=61)
+
+        
+        self.probability_combobox = ttk.Combobox(self,  values=["not_used", "0","0.1", "0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9"], width=30)                   
         self.probability_combobox.grid(column=3, columnspan=1, row=62)  
-        self.probability_combobox.current(5)
+        self.probability_combobox.current(0)
         
         self.retrieve_recordings_with_manual_analysis = BooleanVar()
         retrieve_recordings_with_manual_analysis_Checkbuttton = Checkbutton(self, text="Recording must have manual analysis", variable=self.retrieve_recordings_with_manual_analysis, command=lambda: self.retrieve_model_or_manual_analysis_recordings_checkbox_pressed())

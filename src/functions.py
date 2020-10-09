@@ -1778,7 +1778,7 @@ def retrieve_training_validation_test_data_from_database(recording_id):
     training_validation_test_data_rows = cur.fetchall() 
     return training_validation_test_data_rows
     
-def retrieve_recordings(date_range, include_all_test_validation_recordings, include_recordings_with_model_predictions, include_recordings_that_have_been_manually_analysed, model_must_predict_what, probability_cutoff, model_run_name):
+def retrieve_recordings(date_range, include_all_test_validation_recordings, include_recordings_with_model_predictions, include_recordings_that_have_been_manually_analysed, model_must_predict_what, probability_cutoff, model_run_name, probability_greater_or_less):
 #     print("model_run_name ", model_run_name)
     
     table_name = 'recordings'
@@ -1799,17 +1799,27 @@ def retrieve_recordings(date_range, include_all_test_validation_recordings, incl
         sqlBuilding = "select recording_id, datetime(recordingDateTime,'localtime') as recordingDateTimeNZ, device_name, duration, device_super_name from " + table_name + " where recordingDateTimeNZ < '" + firstDate + "' OR  recordingDateTimeNZ > '" + lastDate + "'"
    
     
-    probability_cutoff_float = float(probability_cutoff)
+#     probability_cutoff_float = float(probability_cutoff)
     
 
         
     if not include_all_test_validation_recordings:        
     
         if include_recordings_with_model_predictions:
-            if probability_cutoff_float == 0:
+            
+            if probability_cutoff == "not_used":
+#             if probability_cutoff_float == 0:
+                
                 sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE model_run_name = '" + model_run_name + "' AND predicted_by_model = '" + model_must_predict_what + "')"
             else:
-                sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE model_run_name = '" + model_run_name + "' AND predicted_by_model = '" + model_must_predict_what + "' AND probability > " + probability_cutoff + ")"
+                
+                if probability_greater_or_less == "greater":
+                    comparison_symbol = ">="
+                else:
+                    comparison_symbol = "<="
+                
+#                 sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE model_run_name = '" + model_run_name + "' AND predicted_by_model = '" + model_must_predict_what + "' AND probability > " + probability_cutoff + ")"
+                sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE model_run_name = '" + model_run_name + "' AND predicted_by_model = '" + model_must_predict_what + "' AND probability " + comparison_symbol + " " + probability_cutoff + ")"
            
                 
         if include_recordings_that_have_been_manually_analysed:

@@ -41,7 +41,8 @@ devices_endpoint = '/api/v1/devices'
 
 base_folder = '/media/tim/HDD1/Work/Cacophony/audio_analysis'
 downloaded_recordings_folder = base_folder + '/downloaded_recordings/all_recordings'
-db_file = base_folder + '/audio_analysis_db3.db'
+# db_file = base_folder + '/audio_analysis_db3.db'
+db_file = base_folder + '/audio_analysis_db3_temp.db'
 run_folder = 'Audio_Analysis/audio_classifier_runs' + '/' + model_run_name
 temp_folder = 'Temp'
 temp_display_images_folder = 'temp_display_images'
