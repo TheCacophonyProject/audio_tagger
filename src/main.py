@@ -322,21 +322,34 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         
     def load_all_training_recordings(self):
         self.config(bg="blue")
-        self.recordings = functions.retrieve_recordings("not_march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get())
-        self.current_recordings_index = 0
-        self.display_spectrogram()
+#         date_range = "not_march_2020"
+        self.load_recordings("not_march_2020")
+#         self.recordings = functions.retrieve_recordings("not_march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get(), self.exclude_recordings_that_have_been_analysed_for_selected.get())
+#         self.current_recordings_index = 0
+#         self.display_spectrogram()
              
     def load_feb_2020_training_recordings(self):
         self.config(bg="green")
-        self.recordings = functions.retrieve_recordings("feb_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get())
-        self.current_recordings_index = 0
-        self.display_spectrogram()
+#         date_range = "feb_2020"
+        self.load_recordings("feb_2020")
+#         self.recordings = functions.retrieve_recordings("feb_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get(), self.exclude_recordings_that_have_been_analysed_for_selected.get())
+#         self.current_recordings_index = 0
+#         self.display_spectrogram()
         
     def load_march_2020_test_recordings(self):
         self.config(bg="yellow")
-        self.recordings = functions.retrieve_recordings("march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get())
-        self.current_recordings_index = 0   
-        self.display_spectrogram()           
+        self.load_recordings("march_2020")
+#         date_range = "march_2020"
+#         self.recordings = functions.retrieve_recordings("march_2020", self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get(), self.exclude_recordings_that_have_been_analysed_for_selected.get())
+#         self.current_recordings_index = 0   
+#         self.display_spectrogram()      
+        
+    def load_recordings(self, date_range): 
+        self.recordings = functions.retrieve_recordings(date_range, self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get(), self.exclude_recordings_that_have_been_analysed_for_selected.get())
+        self.current_recordings_index = 0
+        self.display_spectrogram()    
+        
+        
                 
     def display_spectrogram(self):
         try:
@@ -374,7 +387,12 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             recording_date_time = self.recordings[self.current_recordings_index][1]
             recording_device_super_name = self.recordings[self.current_recordings_index][4]
             
-            self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id) + " at location " + recording_device_super_name) 
+#             self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id) + " at location " + recording_device_super_name) 
+#             self.recording_location_message_msg.configure(text="Location: " + recording_device_super_name)
+
+            self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id)) 
+            self.recording_location_message_msg.configure(text="Location: " + recording_device_super_name)
+            
             self.recording_date_and_time_value.set("Date and Time: " + recording_date_time)                              
             
             self.recording_index_out_of_total_of_recordings_value.set("Result " + str(self.current_recordings_index) + " of "   + str(len(self.recordings)) + " recordings")
@@ -390,6 +408,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         if len(self.recordings) < 1:
             messagebox.showinfo("No Recordings", "Sorry, there are no recordings with the selected criteria")
             self.recording_id_and_result_place_value2.set("Recording Id: ")
+            self.recording_location_message_msg.configure(text="Location: ")
             self.recording_index_out_of_total_of_recordings_value.set("Result ")            
             self.canvas.delete("all")
             
@@ -411,7 +430,10 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             
             self.draw_horizontal_frequency_reference_line()   
                         
-            self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id) + " at location " + recording_device_super_name) 
+#             self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id) + " at location " + recording_device_super_name) 
+            self.recording_id_and_result_place_value2.set("Recording Id: " + str(recording_id)) 
+            self.recording_location_message_msg.configure(text="Location: " + recording_device_super_name)
+#             self.recording_location_message_text = "recording_device_super_name"
             self.recording_date_and_time_value.set("Date and Time: " + recording_date_time) 
             self.recording_index_out_of_total_of_recordings_value.set("Result " + str(self.current_recordings_index) + " of "   + str(len(self.recordings)) + " recordings")
             
@@ -512,7 +534,8 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         for model_prediction in model_predictions:
             startTime = model_prediction[0]
 #             duration_of_prediction =  model_prediction[1] 
-            duration_of_prediction = 0.3
+#             duration_of_prediction = 0.3
+            duration_of_prediction = 1.2 # This is the length used by the model to make a prediction
             predictedByModel = model_prediction[2]
             probability = model_prediction[3]
             actual_confirmed = model_prediction[4]
@@ -648,9 +671,14 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         retrieve_recordings_with_model_predictions_Checkbuttton.grid(column=2, columnspan=2, row=65)
         self.retrieve_recordings_with_model_predictions.set(False)
         
+        self.exclude_recordings_that_have_been_analysed_for_selected = BooleanVar()
+        exclude_recordings_that_have_been_analysed_for_selected_Checkbuttton = Checkbutton(self, text="Exclude recordings that have been analysed for selected", variable=self.exclude_recordings_that_have_been_analysed_for_selected, command=lambda: self.retrieve_model_or_manual_analysis_recordings_checkbox_pressed())
+        exclude_recordings_that_have_been_analysed_for_selected_Checkbuttton.grid(column=2, columnspan=2, row=66)
+        self.exclude_recordings_that_have_been_analysed_for_selected.set(False) 
+        
         self.show_model_predictions = BooleanVar()
         show_model_predictions_Checkbuttton = Checkbutton(self, text="Show (these) model predictions", variable=self.show_model_predictions)
-        show_model_predictions_Checkbuttton.grid(column=2, columnspan=1, row=66)
+        show_model_predictions_Checkbuttton.grid(column=2, columnspan=1, row=67)
         self.show_model_predictions.set(True)
         
         select_probability_label_2 = ttk.Label(self, text="Binary model range is 0 (certain) to 0.5 (uncertain)")
@@ -674,6 +702,13 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         retrieve_recordings_with_manual_analysis_Checkbuttton = Checkbutton(self, text="Recording must have manual analysis", variable=self.retrieve_recordings_with_manual_analysis, command=lambda: self.retrieve_model_or_manual_analysis_recordings_checkbox_pressed())
         retrieve_recordings_with_manual_analysis_Checkbuttton.grid(column=4, columnspan=1, row=65)
         self.retrieve_recordings_with_manual_analysis.set(False) 
+        
+        
+        
+        self.auto_play = BooleanVar()
+        auto_play_Checkbuttton = Checkbutton(self, text="Automatically play", variable=self.auto_play)
+#         auto_play_Checkbuttton.grid(column=6, columnspan=1, row=100)
+        auto_play_Checkbuttton.grid(column=6, columnspan=1, row=65)  
                
         load_all_recordings_except_march_2020_button = ttk.Button(self, text="Load all training/validation recordings (All recordings except March 2020 Test recordings) - Blue background", command=lambda: self.load_all_training_recordings()) # https://effbot.org/tkinterbook/canvas.htm))
         load_all_recordings_except_march_2020_button.grid(column=0, columnspan=2, row=70) 
@@ -717,6 +752,12 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         mark_as_what_message_msg.config(width=300)   
         mark_as_what_message_msg.grid(column=5, row=85)  
         
+        self.recording_location_message_text = "Location: "
+        self.recording_location_message_msg = tk.Message(self, text = self.recording_location_message_text)
+        self.recording_location_message_msg.config(width=150)   
+        self.recording_location_message_msg.grid(column=6, row=85) 
+        
+        
         self.marked_as_what_combobox = ttk.Combobox(self,  values=parameters.class_names.split(","), width=30)                   
         self.marked_as_what_combobox.grid(column=5, columnspan=1, row=100)  
         self.marked_as_what_combobox.current(0) 
@@ -725,9 +766,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         next_recording_button = tk.Button(self, text="Next Recording (Mark as Analysed)", bg='green', command=lambda: self.next_recording_and_mark_as_analysed()) # https://effbot.org/tkinterbook/canvas.htm))
         next_recording_button.grid(column=5, columnspan=1, row=110)  
         
-        self.auto_play = BooleanVar()
-        auto_play_Checkbuttton = Checkbutton(self, text="Automatically play", variable=self.auto_play)
-        auto_play_Checkbuttton.grid(column=6, columnspan=1, row=100) 
+        
         
         self.specific_recording_id = StringVar(value='544235')   
         specific_recording_id_entry = tk.Entry(self,  textvariable=self.specific_recording_id, width=30)

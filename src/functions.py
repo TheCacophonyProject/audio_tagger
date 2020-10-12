@@ -1778,7 +1778,7 @@ def retrieve_training_validation_test_data_from_database(recording_id):
     training_validation_test_data_rows = cur.fetchall() 
     return training_validation_test_data_rows
     
-def retrieve_recordings(date_range, include_all_test_validation_recordings, include_recordings_with_model_predictions, include_recordings_that_have_been_manually_analysed, model_must_predict_what, probability_cutoff, model_run_name, probability_greater_or_less):
+def retrieve_recordings(date_range, include_all_test_validation_recordings, include_recordings_with_model_predictions, include_recordings_that_have_been_manually_analysed, model_must_predict_what, probability_cutoff, model_run_name, probability_greater_or_less, exclude_recordings_that_have_been_manually_analysed):
 #     print("model_run_name ", model_run_name)
     
     table_name = 'recordings'
@@ -1822,8 +1822,11 @@ def retrieve_recordings(date_range, include_all_test_validation_recordings, incl
                 sqlBuilding += " AND recording_id IN (SELECT recording_id FROM model_run_result WHERE model_run_name = '" + model_run_name + "' AND predicted_by_model = '" + model_must_predict_what + "' AND probability " + comparison_symbol + " " + probability_cutoff + ")"
            
                 
-        if include_recordings_that_have_been_manually_analysed:
-            sqlBuilding += " AND recording_id IN (SELECT recording_id FROM training_validation_test_data)"       
+    if include_recordings_that_have_been_manually_analysed:
+        sqlBuilding += " AND recording_id IN (SELECT recording_id FROM training_validation_test_data)"     
+        
+    if exclude_recordings_that_have_been_manually_analysed:
+        sqlBuilding += " AND recording_id NOT IN (SELECT recording_id FROM these_recordings_have_been_analysed_for)"         
      
     
               
