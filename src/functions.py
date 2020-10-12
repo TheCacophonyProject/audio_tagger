@@ -1778,7 +1778,7 @@ def retrieve_training_validation_test_data_from_database(recording_id):
     training_validation_test_data_rows = cur.fetchall() 
     return training_validation_test_data_rows
     
-def retrieve_recordings(date_range, include_all_test_validation_recordings, include_recordings_with_model_predictions, include_recordings_that_have_been_manually_analysed, model_must_predict_what, probability_cutoff, model_run_name, probability_greater_or_less, exclude_recordings_that_have_been_manually_analysed):
+def retrieve_recordings(date_range, include_all_test_validation_recordings, include_recordings_with_model_predictions, include_recordings_that_have_been_manually_analysed, model_must_predict_what, probability_cutoff, model_run_name, probability_greater_or_less, exclude_recordings_that_have_been_manually_analysed, recordings_must_include_this_tag):
 #     print("model_run_name ", model_run_name)
     
     table_name = 'recordings'
@@ -1828,7 +1828,8 @@ def retrieve_recordings(date_range, include_all_test_validation_recordings, incl
     if exclude_recordings_that_have_been_manually_analysed:
         sqlBuilding += " AND recording_id NOT IN (SELECT recording_id FROM these_recordings_have_been_analysed_for)"         
      
-    
+    if recordings_must_include_this_tag != None:
+        sqlBuilding += " AND recording_id IN (SELECT recording_id FROM training_validation_test_data WHERE what = '" + recordings_must_include_this_tag + "')"     
               
 
     sqlBuilding += " ORDER BY recording_id ASC"    
@@ -1945,11 +1946,33 @@ def has_this_recording_been_analysed_for_this(recording_id, what_to_filter_on):
 def get_spectrogram_rectangle_selection_colour(what):
     # http://www.science.smith.edu/dftwiki/index.php/Color_Charts_for_TKinter
     switcher = {
-        "morepork_more-pork": "green",
-        "maybe_morepork_more-pork":"yellow",
-        "morepork_more-pork_part":"blue",
-        "cow": "dark orange",    
-        "morepork_croaking": "cyan2"    
+        "bird": "blue",
+        "buzzy_insect":"OliveDrab1",
+        "car":"gold2",
+        "car_horn": "linen",
+        "chainsaw":"lavender blush",
+        "cow":"light slate gray",
+        "cow_sheep":"light slate gray",        
+        "crackle": "dodger blue",    
+        "dog": "light blue",        
+        "dove":"pink1",
+        "duck":"cyan",
+        "fire_work": "red2",
+        "frog":"light yellow",
+        "hammering":"indian red",
+        "hand_saw": "dark salmon",    
+        "human": "purple1",
+        "maybe_morepork_more-pork": "yellow2",
+        "morepork_croaking":"pale green",
+        "morepork_more-pork":"green4",        
+        "morepork_more-pork_part": "green2",       
+        "music":"maroon1",
+        "plane": "MistyRose4",    
+        "rumble": "SlateBlue4",   
+        "siren":"magenta2",
+        "unknown":"PaleTurquoise3",
+        "water": "CadetBlue4",    
+        "white_noise": "snow"  
     }
     return switcher.get(what, "red")
     

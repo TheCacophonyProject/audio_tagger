@@ -234,7 +234,26 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             start_position_seconds = self.x_rectangle_finish_position_seconds    
         
         if abs(finish_position_seconds - start_position_seconds) < 0.1:
-            self.play_clip(start_position_seconds)
+            
+            # if over a prediction - don't play but display the prediction
+            selected_item_id = event.widget.find_withtag('current')[0]        
+
+            item_type = self.canvas.type(CURRENT) # https://stackoverflow.com/questions/38982313/python-tkinter-identify-object-on-click
+            if item_type != "image":
+                # display it
+                           
+                tags_from_item = self.canvas.gettags(selected_item_id)
+                    
+#                 recording_id = tags_from_item[0]
+#                 start_time_seconds = tags_from_item[1]
+#                 finish_time_seconds = tags_from_item[2]
+#                 lower_freq_hertz = tags_from_item[3]
+#                 upper_freq_hertz = tags_from_item[4]
+                what = tags_from_item[5]   
+                print("clicked on ", what)
+            
+            else:
+                self.play_clip(start_position_seconds)
             return
         
         if not self.actual_confirmed.get():
@@ -345,7 +364,13 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
 #         self.display_spectrogram()      
         
     def load_recordings(self, date_range): 
-        self.recordings = functions.retrieve_recordings(date_range, self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get(), self.exclude_recordings_that_have_been_analysed_for_selected.get())
+        if self.recordings_must_have_this_manual_tag.get():
+            recordings_must_include_this_tag = self.model_must_predict_what_combobox.get()
+        else:
+            recordings_must_include_this_tag = None
+            
+        
+        self.recordings = functions.retrieve_recordings(date_range, self.retrieve_recording_even_if_not_tagged_by_model_human.get(), self.retrieve_recordings_with_model_predictions.get(), self.retrieve_recordings_with_manual_analysis.get(), self.model_must_predict_what_combobox.get(), self.probability_combobox.get(), self.run_names_combo.get(), self.probability_greater_less_than.get(), self.exclude_recordings_that_have_been_analysed_for_selected.get(), recordings_must_include_this_tag)
         self.current_recordings_index = 0
         self.display_spectrogram()    
         
@@ -379,8 +404,14 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             
             self.retrieve_training_validation_test_data_from_database_and_add_rectangles_to_image()    
             
-            if self.show_model_predictions.get():
-                self.display_model_predictions()                
+            show_all_model_predictions = self.show_all_model_predictions.get()
+            show_only_these_model_predictions =  self.show_only_these_model_predictions.get()
+            
+#             if self.show_all_model_predictions.get() or self.show_only_these_model_predictions.get():
+#                 self.display_model_predictions()                
+
+            if show_all_model_predictions or show_only_these_model_predictions:
+                self.display_model_predictions()  
             
             self.draw_horizontal_frequency_reference_line()   
             
@@ -425,8 +456,14 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
     
             self.retrieve_training_validation_test_data_from_database_and_add_rectangles_to_image()  
             
-            if self.show_model_predictions.get():
-                self.display_model_predictions()               
+            show_all_model_predictions = self.show_all_model_predictions.get()
+            show_only_these_model_predictions =  self.show_only_these_model_predictions.get()
+            
+#             if self.show_all_model_predictions.get() or self.show_only_these_model_predictions.get():
+#                 self.display_model_predictions()                
+
+            if show_all_model_predictions or show_only_these_model_predictions:
+                self.display_model_predictions()                
             
             self.draw_horizontal_frequency_reference_line()   
                         
@@ -527,6 +564,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         # Now change 
      
     def display_model_predictions(self):
+        just_show_these_predictions = self.show_only_these_model_predictions.get()
         recording_id = self.recordings[self.current_recordings_index][0]
         duration_of_recording = self.recordings[self.current_recordings_index][3]
         
@@ -540,9 +578,14 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             probability = model_prediction[3]
             actual_confirmed = model_prediction[4]
             
-            predictionsToDisplay = self.model_must_predict_what_combobox.get()
+            if just_show_these_predictions:            
+                predictionsToDisplay = self.model_must_predict_what_combobox.get()
+                if predictionsToDisplay != predictedByModel:
+                    continue
             
-            if predictedByModel == predictionsToDisplay:
+#             if predictedByModel == predictionsToDisplay:
+                
+            if predictedByModel != "white_noise" and predictedByModel != "unknown":
                 
                 twenty_percent_of_spectrogram_height = self.spectrogram_image.height() * 0.10
             
@@ -572,7 +615,8 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
                 
     def retrieve_all_test_recordings_checkbox_pressed(self): 
             self.retrieve_recordings_with_model_predictions.set(False)             
-            self.retrieve_recordings_with_manual_analysis.set(False)        
+            self.retrieve_recordings_with_manual_analysis.set(False)   
+            self.recordings_must_have_this_manual_tag.set(False)     
             
 #     def probability_greater_than_checkbox_pressed(self):
 #         self.probability_greater_than.set(True)
@@ -584,7 +628,16 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         
      
     def retrieve_model_or_manual_analysis_recordings_checkbox_pressed(self): 
-        self.retrieve_recording_even_if_not_tagged_by_model_human.set(False)                
+        self.retrieve_recording_even_if_not_tagged_by_model_human.set(False)   
+        
+    def recordings_must_have_this_manual_tag_checkbox_pressed(self): 
+        self.retrieve_recording_even_if_not_tagged_by_model_human.set(False)     
+        
+    def show_all_model_predictions_checkbox_pressed(self): 
+        self.show_only_these_model_predictions.set(False) 
+        
+    def show_only_these_model_predictions_checkbox_pressed(self): 
+        self.show_all_model_predictions.set(False)               
            
     
     def __init__(self, parent, controller):
@@ -671,15 +724,22 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         retrieve_recordings_with_model_predictions_Checkbuttton.grid(column=2, columnspan=2, row=65)
         self.retrieve_recordings_with_model_predictions.set(False)
         
+        
+        
         self.exclude_recordings_that_have_been_analysed_for_selected = BooleanVar()
         exclude_recordings_that_have_been_analysed_for_selected_Checkbuttton = Checkbutton(self, text="Exclude recordings that have been analysed for selected", variable=self.exclude_recordings_that_have_been_analysed_for_selected, command=lambda: self.retrieve_model_or_manual_analysis_recordings_checkbox_pressed())
         exclude_recordings_that_have_been_analysed_for_selected_Checkbuttton.grid(column=2, columnspan=2, row=66)
         self.exclude_recordings_that_have_been_analysed_for_selected.set(False) 
         
-        self.show_model_predictions = BooleanVar()
-        show_model_predictions_Checkbuttton = Checkbutton(self, text="Show (these) model predictions", variable=self.show_model_predictions)
-        show_model_predictions_Checkbuttton.grid(column=2, columnspan=1, row=67)
-        self.show_model_predictions.set(True)
+        self.show_all_model_predictions = BooleanVar()
+        show_all_model_predictions_Checkbuttton = Checkbutton(self, text="Show all model predictions", variable=self.show_all_model_predictions, command=lambda: self.show_all_model_predictions_checkbox_pressed())
+        show_all_model_predictions_Checkbuttton.grid(column=2, columnspan=1, row=67)
+        self.show_all_model_predictions.set(True)
+        
+        self.show_only_these_model_predictions = BooleanVar()
+        show_only_these_model_predictions_Checkbuttton = Checkbutton(self, text="Show only these model predictions", variable=self.show_only_these_model_predictions, command=lambda: self.show_only_these_model_predictions_checkbox_pressed())
+        show_only_these_model_predictions_Checkbuttton.grid(column=2, columnspan=1, row=68)
+        self.show_only_these_model_predictions.set(False)
         
         select_probability_label_2 = ttk.Label(self, text="Binary model range is 0 (certain) to 0.5 (uncertain)")
         select_probability_label_2.grid(column=3, columnspan=1, row=51)
@@ -702,6 +762,11 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
         retrieve_recordings_with_manual_analysis_Checkbuttton = Checkbutton(self, text="Recording must have manual analysis", variable=self.retrieve_recordings_with_manual_analysis, command=lambda: self.retrieve_model_or_manual_analysis_recordings_checkbox_pressed())
         retrieve_recordings_with_manual_analysis_Checkbuttton.grid(column=4, columnspan=1, row=65)
         self.retrieve_recordings_with_manual_analysis.set(False) 
+        
+        self.recordings_must_have_this_manual_tag = BooleanVar()
+        recordings_must_have_this_manual_tag_Checkbuttton = Checkbutton(self, text="Recordings must have this manual tag", variable=self.recordings_must_have_this_manual_tag, command=lambda: self.recordings_must_have_this_manual_tag_checkbox_pressed())
+        recordings_must_have_this_manual_tag_Checkbuttton.grid(column=4, columnspan=1, row=66)
+        self.recordings_must_have_this_manual_tag.set(False)
         
         
         
@@ -805,64 +870,121 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
               
         self.actual_confirmed = tk.StringVar()
 
-        actual_confirmed_radio_button_morepork_classic = ttk.Radiobutton(self,text='Morepork more-pork (green box)', variable=self.actual_confirmed, value='morepork_more-pork',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_morepork_classic = ttk.Radiobutton(self,text='Morepork more-pork (' + functions.get_spectrogram_rectangle_selection_colour('maybe_morepork_more-pork') + ')', variable=self.actual_confirmed, value='morepork_more-pork',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_morepork_classic.grid(column=0, columnspan=1, row=202)               
+#         
+#         actual_confirmed_radio_button_unknown = ttk.Radiobutton(self,text='Unknown', variable=self.actual_confirmed, value='unknown',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_unknown.grid(column=1, columnspan=1, row=202)
+#         actual_confirmed_radio_button_dove = ttk.Radiobutton(self,text='Dove', variable=self.actual_confirmed, value='dove',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_dove.grid(column=2, columnspan=1, row=202)   
+#         actual_confirmed_radio_button_duck = ttk.Radiobutton(self,text='Duck', variable=self.actual_confirmed, value='duck',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_duck.grid(column=3, columnspan=1, row=202) 
+#         actual_confirmed_radio_button_dog = ttk.Radiobutton(self,text='Dog', variable=self.actual_confirmed, value='dog',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_dog.grid(column=4, columnspan=1, row=202) 
+#         actual_confirmed_radio_button_human = ttk.Radiobutton(self,text='Human', variable=self.actual_confirmed, value='human',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_human.grid(column=5, columnspan=1, row=202)   
+#         actual_confirmed_radio_button_siren = ttk.Radiobutton(self,text='Siren', variable=self.actual_confirmed, value='siren',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_siren.grid(column=6, columnspan=1, row=202)
+#         
+#         actual_confirmed_radio_button_bird = ttk.Radiobutton(self,text='Bird', variable=self.actual_confirmed, value='bird',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_bird.grid(column=0, columnspan=1, row=203) 
+#         actual_confirmed_radio_button_car = ttk.Radiobutton(self,text='Car', variable=self.actual_confirmed, value='car',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_car.grid(column=1, columnspan=1, row=203)
+#         actual_confirmed_radio_button_rumble = ttk.Radiobutton(self,text='Rumble', variable=self.actual_confirmed, value='rumble',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_rumble.grid(column=2, columnspan=1, row=203)
+#         actual_confirmed_radio_button_water = ttk.Radiobutton(self,text='Water', variable=self.actual_confirmed, value='water',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_water.grid(column=3, columnspan=1, row=203)
+#         actual_confirmed_radio_button_hand_saw = ttk.Radiobutton(self,text='Hand saw', variable=self.actual_confirmed, value='hand_saw',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_hand_saw.grid(column=4, columnspan=1, row=203) 
+#         actual_confirmed_radio_button_white_noise = ttk.Radiobutton(self,text='White noise', variable=self.actual_confirmed, value='white_noise',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_white_noise.grid(column=5, columnspan=1, row=203)
+#         actual_confirmed_radio_button_plane = ttk.Radiobutton(self,text='Plane', variable=self.actual_confirmed, value='plane',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_plane.grid(column=6, columnspan=1, row=203)
+#         
+#         actual_confirmed_radio_button_cow = ttk.Radiobutton(self,text='Cow or Sheep', variable=self.actual_confirmed, value='cow_sheep',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_cow.grid(column=0, columnspan=1, row=204) 
+#         actual_confirmed_radio_button_buzzy_insect = ttk.Radiobutton(self,text='Buzzy insect', variable=self.actual_confirmed, value='buzzy_insect',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_buzzy_insect.grid(column=1, columnspan=1, row=204) 
+#         actual_confirmed_radio_morepork_more_pork_part = ttk.Radiobutton(self,text='Morepork more-pork Part (blue box)', variable=self.actual_confirmed, value='morepork_more-pork_part',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_morepork_more_pork_part.grid(column=2, columnspan=1, row=204) 
+#         actual_confirmed_radio_button_hammering = ttk.Radiobutton(self,text='Hammering', variable=self.actual_confirmed, value='hammering',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_hammering.grid(column=3, columnspan=1, row=204)  
+#         actual_confirmed_radio_button_frog = ttk.Radiobutton(self,text='Frog', variable=self.actual_confirmed, value='frog',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_frog.grid(column=4, columnspan=1, row=204)
+#         actual_confirmed_radio_button_chainsaw = ttk.Radiobutton(self,text='Chainsaw', variable=self.actual_confirmed, value='chainsaw',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_chainsaw.grid(column=5, columnspan=1, row=204) 
+#         actual_confirmed_radio_button_crackle = ttk.Radiobutton(self,text='Crackle', variable=self.actual_confirmed, value='crackle',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_crackle.grid(column=6, columnspan=1, row=204)  
+#         
+#         actual_confirmed_radio_button_car_horn = ttk.Radiobutton(self,text='Car horn', variable=self.actual_confirmed, value='car_horn',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_car_horn.grid(column=0, columnspan=1, row=205)
+#         actual_confirmed_radio_button_fire_work = ttk.Radiobutton(self,text='Fire work', variable=self.actual_confirmed, value='fire_work',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_fire_work.grid(column=1, columnspan=1, row=205)
+#         actual_confirmed_radio_button_maybe_morepork_more_pork = ttk.Radiobutton(self,text='Maybe Morepork more-pork (yellow box)', variable=self.actual_confirmed, value='maybe_morepork_more-pork',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_maybe_morepork_more_pork.grid(column=2, columnspan=1, row=205)
+#         actual_confirmed_radio_button_music = ttk.Radiobutton(self,text='Music', variable=self.actual_confirmed, value='music',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_music.grid(column=3, columnspan=1, row=205) 
+#         actual_confirmed_radio_button_music = ttk.Radiobutton(self,text='Morepork croaking (cyan2 box)', variable=self.actual_confirmed, value='morepork_croaking',command=lambda: self.confirm_actual())
+#         actual_confirmed_radio_button_music.grid(column=4, columnspan=1, row=205)  
+
+        actual_confirmed_radio_button_morepork_classic = tk.Radiobutton(self,text='Morepork more-pork (' + functions.get_spectrogram_rectangle_selection_colour('morepork_more-pork') + ')', variable=self.actual_confirmed, value='morepork_more-pork',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('morepork_more-pork'))
         actual_confirmed_radio_button_morepork_classic.grid(column=0, columnspan=1, row=202)               
         
-        actual_confirmed_radio_button_unknown = ttk.Radiobutton(self,text='Unknown', variable=self.actual_confirmed, value='unknown',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_unknown = tk.Radiobutton(self,text='Unknown (' + functions.get_spectrogram_rectangle_selection_colour('unknown') + ')', variable=self.actual_confirmed, value='unknown',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('unknown'))
         actual_confirmed_radio_button_unknown.grid(column=1, columnspan=1, row=202)
-        actual_confirmed_radio_button_dove = ttk.Radiobutton(self,text='Dove', variable=self.actual_confirmed, value='dove',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_dove = tk.Radiobutton(self,text='Dove (' + functions.get_spectrogram_rectangle_selection_colour('dove') + ')', variable=self.actual_confirmed, value='dove',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('dove'))
         actual_confirmed_radio_button_dove.grid(column=2, columnspan=1, row=202)   
-        actual_confirmed_radio_button_duck = ttk.Radiobutton(self,text='Duck', variable=self.actual_confirmed, value='duck',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_duck = tk.Radiobutton(self,text='Duck (' + functions.get_spectrogram_rectangle_selection_colour('duck') + ')', variable=self.actual_confirmed, value='duck',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('duck'))
         actual_confirmed_radio_button_duck.grid(column=3, columnspan=1, row=202) 
-        actual_confirmed_radio_button_dog = ttk.Radiobutton(self,text='Dog', variable=self.actual_confirmed, value='dog',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_dog = tk.Radiobutton(self,text='Dog (' + functions.get_spectrogram_rectangle_selection_colour('dog') + ')', variable=self.actual_confirmed, value='dog',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('dog'))
         actual_confirmed_radio_button_dog.grid(column=4, columnspan=1, row=202) 
-        actual_confirmed_radio_button_human = ttk.Radiobutton(self,text='Human', variable=self.actual_confirmed, value='human',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_human = tk.Radiobutton(self,text='Human (' + functions.get_spectrogram_rectangle_selection_colour('human') + ')', variable=self.actual_confirmed, value='human',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('human'))
         actual_confirmed_radio_button_human.grid(column=5, columnspan=1, row=202)   
-        actual_confirmed_radio_button_siren = ttk.Radiobutton(self,text='Siren', variable=self.actual_confirmed, value='siren',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_siren = tk.Radiobutton(self,text='Siren (' + functions.get_spectrogram_rectangle_selection_colour('siren') + ')', variable=self.actual_confirmed, value='siren',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('siren'))
         actual_confirmed_radio_button_siren.grid(column=6, columnspan=1, row=202)
         
-        actual_confirmed_radio_button_bird = ttk.Radiobutton(self,text='Bird', variable=self.actual_confirmed, value='bird',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_bird = tk.Radiobutton(self,text='Bird (' + functions.get_spectrogram_rectangle_selection_colour('bird') + ')', variable=self.actual_confirmed, value='bird',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('bird'))
         actual_confirmed_radio_button_bird.grid(column=0, columnspan=1, row=203) 
-        actual_confirmed_radio_button_car = ttk.Radiobutton(self,text='Car', variable=self.actual_confirmed, value='car',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_car = tk.Radiobutton(self,text='Car (' + functions.get_spectrogram_rectangle_selection_colour('car') + ')', variable=self.actual_confirmed, value='car',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('car'))
         actual_confirmed_radio_button_car.grid(column=1, columnspan=1, row=203)
-        actual_confirmed_radio_button_rumble = ttk.Radiobutton(self,text='Rumble', variable=self.actual_confirmed, value='rumble',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_rumble = tk.Radiobutton(self,text='Rumble (' + functions.get_spectrogram_rectangle_selection_colour('rumble') + ')', variable=self.actual_confirmed, value='rumble',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('rumble'))
         actual_confirmed_radio_button_rumble.grid(column=2, columnspan=1, row=203)
-        actual_confirmed_radio_button_water = ttk.Radiobutton(self,text='Water', variable=self.actual_confirmed, value='water',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_water = tk.Radiobutton(self,text='Water (' + functions.get_spectrogram_rectangle_selection_colour('water') + ')', variable=self.actual_confirmed, value='water',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('water'))
         actual_confirmed_radio_button_water.grid(column=3, columnspan=1, row=203)
-        actual_confirmed_radio_button_hand_saw = ttk.Radiobutton(self,text='Hand saw', variable=self.actual_confirmed, value='hand_saw',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_hand_saw = tk.Radiobutton(self,text='Hand saw (' + functions.get_spectrogram_rectangle_selection_colour('hand_saw') + ')', variable=self.actual_confirmed, value='hand_saw',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('hand_saw'))
         actual_confirmed_radio_button_hand_saw.grid(column=4, columnspan=1, row=203) 
-        actual_confirmed_radio_button_white_noise = ttk.Radiobutton(self,text='White noise', variable=self.actual_confirmed, value='white_noise',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_white_noise = tk.Radiobutton(self,text='White noise (' + functions.get_spectrogram_rectangle_selection_colour('white_noise') + ')', variable=self.actual_confirmed, value='white_noise',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('white_noise'))
         actual_confirmed_radio_button_white_noise.grid(column=5, columnspan=1, row=203)
-        actual_confirmed_radio_button_plane = ttk.Radiobutton(self,text='Plane', variable=self.actual_confirmed, value='plane',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_plane = tk.Radiobutton(self,text='Plane (' + functions.get_spectrogram_rectangle_selection_colour('plane') + ')', variable=self.actual_confirmed, value='plane',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('plane'))
         actual_confirmed_radio_button_plane.grid(column=6, columnspan=1, row=203)
         
-        actual_confirmed_radio_button_cow = ttk.Radiobutton(self,text='Cow or Sheep', variable=self.actual_confirmed, value='cow_sheep',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_cow = tk.Radiobutton(self,text='Cow or Sheep (' + functions.get_spectrogram_rectangle_selection_colour('cow_sheep') + ')', variable=self.actual_confirmed, value='cow_sheep',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('cow_sheep'))
         actual_confirmed_radio_button_cow.grid(column=0, columnspan=1, row=204) 
-        actual_confirmed_radio_button_buzzy_insect = ttk.Radiobutton(self,text='Buzzy insect', variable=self.actual_confirmed, value='buzzy_insect',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_buzzy_insect = tk.Radiobutton(self,text='Buzzy insect (' + functions.get_spectrogram_rectangle_selection_colour('buzzy_insect') + ')', variable=self.actual_confirmed, value='buzzy_insect',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('buzzy_insect'))
         actual_confirmed_radio_button_buzzy_insect.grid(column=1, columnspan=1, row=204) 
-        actual_confirmed_radio_morepork_more_pork_part = ttk.Radiobutton(self,text='Morepork more-pork Part (blue box)', variable=self.actual_confirmed, value='morepork_more-pork_part',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_morepork_more_pork_part = tk.Radiobutton(self,text='Morepork more-pork Part (' + functions.get_spectrogram_rectangle_selection_colour('morepork_more-pork_part') + ')', variable=self.actual_confirmed, value='morepork_more-pork_part',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('morepork_more-pork_part'))
         actual_confirmed_radio_morepork_more_pork_part.grid(column=2, columnspan=1, row=204) 
-        actual_confirmed_radio_button_hammering = ttk.Radiobutton(self,text='Hammering', variable=self.actual_confirmed, value='hammering',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_hammering = tk.Radiobutton(self,text='Hammering (' + functions.get_spectrogram_rectangle_selection_colour('hammering') + ')', variable=self.actual_confirmed, value='hammering',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('hammering'))
         actual_confirmed_radio_button_hammering.grid(column=3, columnspan=1, row=204)  
-        actual_confirmed_radio_button_frog = ttk.Radiobutton(self,text='Frog', variable=self.actual_confirmed, value='frog',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_frog = tk.Radiobutton(self,text='Frog (' + functions.get_spectrogram_rectangle_selection_colour('frog') + ')', variable=self.actual_confirmed, value='frog',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('frog'))
         actual_confirmed_radio_button_frog.grid(column=4, columnspan=1, row=204)
-        actual_confirmed_radio_button_chainsaw = ttk.Radiobutton(self,text='Chainsaw', variable=self.actual_confirmed, value='chainsaw',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_chainsaw = tk.Radiobutton(self,text='Chainsaw (' + functions.get_spectrogram_rectangle_selection_colour('chainsaw') + ')', variable=self.actual_confirmed, value='chainsaw',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('chainsaw'))
         actual_confirmed_radio_button_chainsaw.grid(column=5, columnspan=1, row=204) 
-        actual_confirmed_radio_button_crackle = ttk.Radiobutton(self,text='Crackle', variable=self.actual_confirmed, value='crackle',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_crackle = tk.Radiobutton(self,text='Crackle (' + functions.get_spectrogram_rectangle_selection_colour('crackle') + ')', variable=self.actual_confirmed, value='crackle',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('crackle'))
         actual_confirmed_radio_button_crackle.grid(column=6, columnspan=1, row=204)  
         
-        actual_confirmed_radio_button_car_horn = ttk.Radiobutton(self,text='Car horn', variable=self.actual_confirmed, value='car_horn',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_car_horn = tk.Radiobutton(self,text='Car horn (' + functions.get_spectrogram_rectangle_selection_colour('car_horn') + ')', variable=self.actual_confirmed, value='car_horn',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('car_horn'))
         actual_confirmed_radio_button_car_horn.grid(column=0, columnspan=1, row=205)
-        actual_confirmed_radio_button_fire_work = ttk.Radiobutton(self,text='Fire work', variable=self.actual_confirmed, value='fire_work',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_fire_work = tk.Radiobutton(self,text='Fire work (' + functions.get_spectrogram_rectangle_selection_colour('fire_work') + ')', variable=self.actual_confirmed, value='fire_work',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('fire_work'))
         actual_confirmed_radio_button_fire_work.grid(column=1, columnspan=1, row=205)
-        actual_confirmed_radio_button_maybe_morepork_more_pork = ttk.Radiobutton(self,text='Maybe Morepork more-pork (yellow box)', variable=self.actual_confirmed, value='maybe_morepork_more-pork',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_maybe_morepork_more_pork = tk.Radiobutton(self,text='Maybe Morepork more-pork (' + functions.get_spectrogram_rectangle_selection_colour('maybe_morepork_more-pork') + ')', variable=self.actual_confirmed, value='maybe_morepork_more-pork',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('maybe_morepork_more-pork'))
         actual_confirmed_radio_button_maybe_morepork_more_pork.grid(column=2, columnspan=1, row=205)
-        actual_confirmed_radio_button_music = ttk.Radiobutton(self,text='Music', variable=self.actual_confirmed, value='music',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_music = tk.Radiobutton(self,text='Music (' + functions.get_spectrogram_rectangle_selection_colour('music') + ')', variable=self.actual_confirmed, value='music',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('music'))
         actual_confirmed_radio_button_music.grid(column=3, columnspan=1, row=205) 
-        actual_confirmed_radio_button_music = ttk.Radiobutton(self,text='Morepork croaking (cyan2 box)', variable=self.actual_confirmed, value='morepork_croaking',command=lambda: self.confirm_actual())
+        actual_confirmed_radio_button_music = tk.Radiobutton(self,text='Morepork croaking (' + functions.get_spectrogram_rectangle_selection_colour('morepork_croaking') + ')', variable=self.actual_confirmed, value='morepork_croaking',command=lambda: self.confirm_actual(), fg=functions.get_spectrogram_rectangle_selection_colour('morepork_croaking'))
         actual_confirmed_radio_button_music.grid(column=4, columnspan=1, row=205)  
         
-        test_validation_data_analysis_label = ttk.Label(self, text="Test validation data analysis", font=LARGE_FONT)
+        test_validation_data_analysis_label = tk.Label(self, text="Test validation data analysis", font=LARGE_FONT)
         test_validation_data_analysis_label.grid(column=0, columnspan=1, row=300)        
              
         back_to_home_button = ttk.Button(self, text="Back to Home", command=lambda: controller.show_frame(HomePage))
@@ -1248,15 +1370,15 @@ class UpdateTrainingDataUsingAModelsPredictions(tk.Frame):
                 self.current_model_run_result_ID = self.model_run_result_data[self.current_training_data_array_pos][0]
                 load_current_model_run_result()
                 
-        def play_clip():
-
-            if self.apply_bandpass_filter.get() == "on":
-                applyBandPass = True
-            else:
-                applyBandPass = False        
-        
-            functions.play_clip(str(self.current_training_data_recording_id), float(self.current_training_data_start_time),self.current_training_data_duration, applyBandPass, parameters.morepork_min_freq, parameters.morepork_max_freq)
-            
+#         def play_clip():
+# 
+#             if self.apply_bandpass_filter.get() == "on":
+#                 applyBandPass = True
+#             else:
+#                 applyBandPass = False        
+#         
+#             functions.play_clip(str(self.current_training_data_recording_id), float(self.current_training_data_start_time),self.current_training_data_duration, applyBandPass, parameters.morepork_min_freq, parameters.morepork_max_freq)
+#             
                      
         def display_images():
             run_folder = parameters.run_folder
