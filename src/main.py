@@ -233,27 +233,8 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             finish_position_seconds = self.x_rectangle_start_position_seconds
             start_position_seconds = self.x_rectangle_finish_position_seconds    
         
-        if abs(finish_position_seconds - start_position_seconds) < 0.1:
-            
-            # if over a prediction - don't play but display the prediction
-            selected_item_id = event.widget.find_withtag('current')[0]        
-
-            item_type = self.canvas.type(CURRENT) # https://stackoverflow.com/questions/38982313/python-tkinter-identify-object-on-click
-            if item_type != "image":
-                # display it
-                           
-                tags_from_item = self.canvas.gettags(selected_item_id)
-                    
-#                 recording_id = tags_from_item[0]
-#                 start_time_seconds = tags_from_item[1]
-#                 finish_time_seconds = tags_from_item[2]
-#                 lower_freq_hertz = tags_from_item[3]
-#                 upper_freq_hertz = tags_from_item[4]
-                what = tags_from_item[5]   
-                print("clicked on ", what)
-            
-            else:
-                self.play_clip(start_position_seconds)
+        if abs(finish_position_seconds - start_position_seconds) < 0.1:          
+            self.play_clip(start_position_seconds)
             return
         
         if not self.actual_confirmed.get():
