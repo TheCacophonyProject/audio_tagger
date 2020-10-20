@@ -1172,7 +1172,106 @@ def scale_minmax(X, min=0.0, max=1.0):
 
 
 
-def get_spectrogram_for_creating_training_and_test_data(recording_id, min_freq, max_freq):
+# def get_spectrogram_for_creating_training_and_test_data(recording_id, min_freq, max_freq):
+#      
+#     print("min_freq ", min_freq)
+#     print("max_freq ", max_freq)
+#  
+#     temp_display_images_folder_path = parameters.base_folder + '/' + parameters.run_folder + '/' + parameters.temp_display_images_folder 
+#     if not os.path.exists(temp_display_images_folder_path):
+#         os.makedirs(temp_display_images_folder_path)         
+#  
+#     try:
+#          
+#         audio_filename = str(recording_id) + '.m4a'
+#         audio_in_path = parameters.downloaded_recordings_folder + '/' +  audio_filename 
+#         image_out_name = 'temp_spectrogram.jpg'
+#         print('image_out_name', image_out_name)           
+#         
+#         image_out_path = temp_display_images_folder_path + '/' + image_out_name
+#          
+#         y, sr = librosa.load(audio_in_path, sr=None)  
+#                        
+#         mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq,fmax=max_freq, n_mels=32)
+#         print(mel_spectrogram.shape)
+#         maxElement = np.amax(mel_spectrogram)
+#         print(maxElement)
+#          
+#               
+#         plt.figure()
+#          
+#         plt.axis('off') # no axis
+#         plt.axes([0., 0., 1., 1.], frameon=False, xticks=[], yticks=[]) # Remove the white edge
+#  
+#         librosa.display.specshow(librosa.power_to_db(mel_spectrogram**2, ref=np.max), sr=sr, cmap='binary')
+#         
+#         plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
+#         plt.close()
+#          
+#         return get_image_for_for_creating_test_data(image_out_path)
+#          
+#     except Exception as e:
+#         print(e, '\n')
+#         print('Error processing spectrogram ', onset)
+
+# def get_spectrogram_for_creating_training_and_test_data2(recording_id, min_freq, max_freq):
+#     
+#     print("min_freq ", min_freq)
+#     print("max_freq ", max_freq)
+# 
+#     temp_display_images_folder_path = parameters.base_folder + '/' + parameters.run_folder + '/' + parameters.temp_display_images_folder 
+#     if not os.path.exists(temp_display_images_folder_path):
+#         os.makedirs(temp_display_images_folder_path)         
+# 
+#     try:
+#         
+#         audio_filename = str(recording_id) + '.m4a'
+#         audio_in_path = parameters.downloaded_recordings_folder + '/' +  audio_filename 
+#         image_out_name = 'temp_spectrogram.jpg'
+#         print('image_out_name', image_out_name)           
+#        
+#         image_out_path = temp_display_images_folder_path + '/' + image_out_name
+#         
+#         y, sr = librosa.load(audio_in_path, sr=None)  
+#                       
+# #         mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq,fmax=max_freq, n_mels=32)
+# #         print(mel_spectrogram.shape)
+# #         maxElement = np.amax(mel_spectrogram)
+# #         print(maxElement)
+#        
+#         S = librosa.stft(y)  # STFT of y
+#     
+#         S_db = librosa.power_to_db(S**2)
+#         
+#         height = S_db.shape[0]
+#     
+#         height_step = sr/2 / height
+#          
+#         # to show a freq range
+#         # min=600, max=1200
+#         # 
+#         array_min = int( min_freq / height_step)
+#         array_max = int(max_freq / height_step)  
+#         
+#         S_db_part = S_db[array_min : array_max, :]    
+#         S_db_part = np.flip(S_db_part, 0) # Needed as plot was upside down
+#         
+#              
+#         plt.axis("off")
+#         fig=plt.imshow(S_db_part, cmap='binary')
+#         fig.axes.get_xaxis().set_visible(False)
+#         fig.axes.get_yaxis().set_visible(False)
+#         plt.savefig(image_out_path, bbox_inches='tight', pad_inches=0)
+#     
+#         plt.close()
+#         
+#         return get_image_for_for_creating_test_data(image_out_path)
+#         
+#     except Exception as e:
+#         print(e, '\n')
+#         print('Error processing spectrogram ', onset)
+        
+def get_spectrogram_for_creating_training_and_test_data3(recording_id, min_freq, max_freq):
     
     print("min_freq ", min_freq)
     print("max_freq ", max_freq)
@@ -1190,22 +1289,21 @@ def get_spectrogram_for_creating_training_and_test_data(recording_id, min_freq, 
        
         image_out_path = temp_display_images_folder_path + '/' + image_out_name
         
-        y, sr = librosa.load(audio_in_path, sr=None)  
-                      
-        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq,fmax=max_freq, n_mels=32)
-             
-        plt.figure()
+        y, sr = librosa.load(audio_in_path, sr=None)                        
+    
+        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, fmin=min_freq, fmax=max_freq, n_mels=32)
+            
+        plt.figure()                
+        plt.axis('off') # no axis    
         
-        plt.axis('off') # no axis
-        plt.axes([0., 0., 1., 1.], frameon=False, xticks=[], yticks=[]) # Remove the white edge
-
-        librosa.display.specshow(librosa.power_to_db(mel_spectrogram**2, ref=np.max), sr=sr, cmap='binary')
-       
-        plt.savefig(image_out_path, bbox_inches=None, pad_inches=0)
+        S_dB = librosa.power_to_db(mel_spectrogram, ref=np.max)
+        librosa.display.specshow(S_dB, sr=sr, cmap='binary')        
+        
+        plt.savefig(image_out_path, bbox_inches='tight', pad_inches=0)        
         plt.close()
-        
+            
         return get_image_for_for_creating_test_data(image_out_path)
-        
+            
     except Exception as e:
         print(e, '\n')
         print('Error processing spectrogram ', onset)
@@ -1265,7 +1363,8 @@ def get_image_for_for_creating_test_data(image_name_path):
 #     image = image.resize((int(imageSizeWidth*4),int(imageSizeHeight)), Image.ANTIALIAS)
 #     image = image.resize((int(imageSizeWidth*3.9),int(imageSizeHeight)), Image.ANTIALIAS)
 #     image = image.resize((int(imageSizeWidth*3.85),int(imageSizeHeight)), Image.ANTIALIAS)
-    image = image.resize((int(imageSizeWidth*3.84),int(imageSizeHeight)), Image.ANTIALIAS)
+#     image = image.resize((int(imageSizeWidth*3.84),int(imageSizeHeight)), Image.ANTIALIAS)
+    image = image.resize((int(imageSizeWidth*3.84* 1.29),int(imageSizeHeight*1.30 )), Image.ANTIALIAS)
 
     print("Image size is ", image.size)
     spectrogram_image = ImageTk.PhotoImage(image)
@@ -2035,7 +2134,7 @@ def get_filtered_recording(recording_id):
     y, sr = librosa.load(audio_in_path)
 #     y_filtered = apply_band_pass_filter(y, sr)
     
-    y = butter_bandpass_filter(y, parameters.morepork_min_freq, parameters.morepork_max_freq, sr)    
+    y = butter_bandpass_filter(y, parameters.morepork_min_freq_for_model_spectrograms, parameters.morepork_max_freq_for_model_spectrograms, sr)    
     y = noise_reduce(y, sr) 
 
 

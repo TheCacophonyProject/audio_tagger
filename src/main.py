@@ -364,7 +364,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             recording_date_time = self.recordings[self.current_recordings_index][1]
             recording_device_super_name = self.recordings[self.current_recordings_index][4]
     
-            self.spectrogram_image = functions.get_spectrogram_for_creating_training_and_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))
+            self.spectrogram_image = functions.get_spectrogram_for_creating_training_and_test_data3(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))
             
             self.image = self.canvas.create_image(0, 0, image=self.spectrogram_image, anchor=NW)   
             self.canvas.configure(height=self.spectrogram_image.height())             
@@ -430,7 +430,7 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             recording_date_time = self.recordings[self.current_recordings_index][1]
             recording_device_super_name = self.recordings[self.current_recordings_index][4]
     
-            self.spectrogram_image = functions.get_spectrogram_for_creating_training_and_test_data(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))  
+            self.spectrogram_image = functions.get_spectrogram_for_creating_training_and_test_data3(str(recording_id), int(self.min_freq.get()), int(self.max_freq.get()))  
             self.canvas.configure(height=self.spectrogram_image.height())  
             self.image = self.canvas.create_image(0, 0, image=self.spectrogram_image, anchor=NW)  
                                  
@@ -566,7 +566,8 @@ class ManuallyCreateTrainingAndTestDataPage(tk.Frame):
             
 #             if predictedByModel == predictionsToDisplay:
                 
-            if predictedByModel != "white_noise" and predictedByModel != "unknown":
+#             if predictedByModel != "white_noise" and predictedByModel != "unknown":
+            if predictedByModel != "white_noise" and predictedByModel != "crackle" and predictedByModel != "rumble":
                 
                 twenty_percent_of_spectrogram_height = self.spectrogram_image.height() * 0.10
             
@@ -1286,7 +1287,7 @@ class UpdateTrainingDataUsingAModelsPredictions(tk.Frame):
         previous_button = ttk.Button(self, text="Previous", command=lambda: previous_model_run_result())
         previous_button.grid(column=2, columnspan=1, row=250)
                             
-        play_again_button = ttk.Button(self, text="Play Again", command=lambda: play_clip())
+        play_again_button = ttk.Button(self, text="Play Again", command=lambda: self.play_clip())
         play_again_button.grid(column=2, columnspan=1, row=252)        
                           
         confirm_next_button = ttk.Button(self, text="Next", command=lambda: next_model_run_result())
@@ -1464,7 +1465,7 @@ class UpdateTrainingDataUsingAModelsPredictions(tk.Frame):
                 
             self.predicted_label_value.set(self.current_training_data_predicted + ' with ' + self.current_training_data_probability + ' probability')
             
-            threading.Thread(target=play_clip(), args=(1,)).start()
+            threading.Thread(target=self.play_clip(), args=(1,)).start()
             threading.Thread(target=display_images(), args=(1,)).start()
         
 app = Main_GUI()
